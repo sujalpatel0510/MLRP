@@ -79,12 +79,7 @@ class User(db.Model):
     leaves = db.relationship('Leave', backref='employee', lazy=True, foreign_keys='Leave.user_id')
     payslips = db.relationship('Payslip', backref='employee', lazy=True)
     attendances = db.relationship('Attendance', backref='employee', lazy=True)
-    salary_adjustments = db.relationship(
-        'SalaryAdjustment',
-        foreign_keys='SalaryAdjustment.user_id',
-        backref='employee',
-        lazy=True
-    )
+    
 
     def set_password(self, password):
         """Hash password"""
@@ -169,7 +164,7 @@ class Payslip(db.Model):
 class SalaryAdjustment(db.Model):
     """Salary adjustment history"""
     __tablename__ = 'salary_adjustments'
-
+    
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     adjustment_date = db.Column(db.Date, nullable=False)
@@ -177,7 +172,13 @@ class SalaryAdjustment(db.Model):
     new_salary = db.Column(db.Float)
     reason = db.Column(db.Text)
     approved_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    
+    # FIX: Add backref=False or custom backref names
+    employee = db.relationship('User', foreign_keys=[user_id], backref='adjusted_salaries')
+    approver = db.relationship('User', foreign_keys=[approved_by], backref='approved_adjustments')
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 
 class Badge(db.Model):
     """Badges and awards model"""
@@ -427,8 +428,8 @@ def initialize_all_leave_balances():
             for leave_type in leave_types:
                 # Check if balance already exists
                 existing = LeaveBalance.query.filter_by(
-                    userid=employee.id,
-                    leavetype=leave_type['type'],
+                    user_id=employee.id,
+                    leave_type=leave_type['type'],
                     year=current_year
                 ).first()
                 
@@ -1138,38 +1139,22 @@ def download_payslip_pdf(payslip_id):
 
 @app.route('/payroll/salary-adjustments')
 @login_required
-@role_required('ADMIN', 'PAYROLL_OFFICER')
-def salary_adjustments_page():
-    """Salary adjustments page"""
+def salary_adjustments():
+    # Put your logic here, e.g.
     user = User.query.get(session.get('user_id'))
-    
-    # Get filters
-    employee_id = request.args.get('employee_id')
-    date_from = request.args.get('date_from')
-    date_to = request.args.get('date_to')
-    
-    # Build query
-    query = SalaryAdjustment.query.join(User)
-    
-    if employee_id:
-        query = query.filter(SalaryAdjustment.user_id == employee_id)
-    if date_from:
-        date_from = datetime.strptime(date_from, '%Y-%m-%d').date()
-        query = query.filter(SalaryAdjustment.adjustment_date >= date_from)
-    if date_to:
-        date_to = datetime.strptime(date_to, '%Y-%m-%d').date()
-        query = query.filter(SalaryAdjustment.adjustment_date <= date_to)
-    
-    adjustments = query.order_by(SalaryAdjustment.adjustment_date.desc()).all()
-    
-    # Get all employees for filter dropdown
-    employees = User.query.filter_by(is_active=True).order_by(User.full_name).all()
-    
-    return render_template('salary_adjustments.html',
-                         user=user,
-                         adjustments=adjustments,
-                         employees=employees,
-                         User=User)  # Pass User model for template access
+    adjustments = SalaryAdjustment.query.order_by(SalaryAdjustment.adjustment_date.desc()).all()
+    return render_template('salary_adjustments.html', user=user, adjustments=adjustments)
+
+
+
+
+@app.route('/reports/<report_type>')
+@login_required
+@role_required('ADMIN', 'PAYROLL_OFFICER')
+def report_detail(report_type):
+    # Render your detailed report here
+    return render_template('report_detail.html', report_type=report_type)
+
 
 @app.route('/payroll/all-payslips')
 @login_required
