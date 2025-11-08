@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - WorkZen HRMS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+
+        :root {
+            --primary-color: #6366f1;
+            --dark: #1f2937;
+            --gray: #6b7280;
+            --light-gray: #f3f4f6;
+            --white: #ffffff;
+            --border: #e5e7eb;
+            --error: #ef4444;
+            --success: #10b981;
+        }
+
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+
+        .login-container {
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 400px;
+            padding: 40px;
+        }
+
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+
+        .login-header h1 {
+            color: var(--primary-color);
+            font-size: 32px;
+            margin-bottom: 5px;
+        }
+
+
+        .login-header p {
+            color: var(--gray);
+            font-size: 14px;
+        }
+
+
+        .alert {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+
+        .alert-error {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+
+        .alert-success {
+            background-color: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark);
+            font-size: 14px;
+        }
+
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+
+        .remember-forgot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            color: var(--gray);
+        }
+
+
+        .checkbox-label input {
+            margin-right: 6px;
+            cursor: pointer;
+        }
+
+
+        .forgot-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+
+        .forgot-link:hover {
+            color: #4f46e5;
+        }
+
+
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+
+        .btn-login:hover {
+            background: #4f46e5;
+        }
+
+
+        .btn-login:active {
+            transform: scale(0.98);
+        }
+
+
+        .register-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: var(--gray);
+        }
+
+
+        .register-link a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+
+
+        .register-link a:hover {
+            color: #4f46e5;
+        }
+
+
+        @media (max-width: 480px) {
+            .login-container {
+                margin: 20px;
+                padding: 30px 20px;
+            }
+
+
+            .login-header h1 {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>WorkZen</h1>
+            <p>Smart HR Management System</p>
+        </div>
+
+        <!-- Error Message Display -->
+        {% if error %}
+        <div class="alert alert-error">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <!-- Success Message Display -->
+        {% if success %}
+        <div class="alert alert-success">
+            {{ success }}
+        </div>
+        {% endif %}
+
+        <!-- Login Form -->
+        <form method="POST">
+            <div class="form-group">
+                <label class="form-label">Login ID</label>
+                <input type="text" class="form-control" name="login_id" placeholder="Enter your login ID" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-control" name="password" placeholder="Enter your password" required>
+            </div>
+            <div class="remember-forgot">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="remember">
+                    Remember me
+                </label>
+                <a href="#" class="forgot-link">Forgot password?</a>
+            </div>
+            <button type="submit" class="btn-login">Sign In</button>
+        </form>
+
+        <!-- Register Link -->
+        <div class="register-link">
+            Don't have an account? <a href="/signup">Register here</a>
+        </div>
+    </div>
+</body>
+</html>

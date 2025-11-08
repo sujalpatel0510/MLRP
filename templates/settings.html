@@ -1,0 +1,344 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - WorkZen{% endblock %}
+
+{% block nav_settings %}active{% endblock %}
+
+{% block page_title %}Settings{% endblock %}
+
+{% block extra_css %}
+<style>
+    .settings-layout {
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        gap: 30px;
+    }
+
+    .settings-menu {
+        background: var(--white);
+        border-radius: 8px;
+        padding: 20px 0;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        height: fit-content;
+    }
+
+    .settings-menu-item {
+        padding: 12px 20px;
+        color: var(--gray);
+        text-decoration: none;
+        display: block;
+        transition: all 0.3s;
+        cursor: pointer;
+        border-left: 3px solid transparent;
+    }
+
+    .settings-menu-item:hover,
+    .settings-menu-item.active {
+        background: var(--light-gray);
+        color: var(--primary-color);
+        border-left-color: var(--primary-color);
+        padding-left: 17px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: var(--dark);
+        font-size: 14px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 15px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-size: 14px;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-color);
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    .role-item {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .role-info {
+        flex: 1;
+    }
+
+    .role-name {
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    .role-desc {
+        font-size: 12px;
+        color: var(--gray);
+    }
+
+    .role-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .role-actions button {
+        padding: 6px 12px;
+        border: 1px solid var(--border);
+        background: transparent;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 500;
+        margin-left: 10px;
+    }
+
+    .badge-admin {
+        background: #fee2e2;
+        color: var(--danger-color);
+    }
+
+    .badge-manager {
+        background: #fef3c7;
+        color: #d97706;
+    }
+
+    .badge-user {
+        background: #dbeafe;
+        color: #2563eb;
+    }
+
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 24px;
+    }
+
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: 0.4s;
+        border-radius: 24px;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+    }
+
+    input:checked + .slider {
+        background-color: var(--primary-color);
+    }
+
+    input:checked + .slider:before {
+        transform: translateX(26px);
+    }
+
+    @media (max-width: 768px) {
+        .settings-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="settings-layout">
+    <div class="settings-menu">
+        <a class="settings-menu-item active">Account Settings</a>
+        <a class="settings-menu-item">Role Management</a>
+        <a class="settings-menu-item">System Settings</a>
+        <a class="settings-menu-item">Email Preferences</a>
+    </div>
+
+    <div>
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Account Settings</h3>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Full Name</label>
+                <input type="text" class="form-control" value="Admin User" placeholder="Enter your full name">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" class="form-control" value="admin@workzen.com" placeholder="Enter email">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone Number</label>
+                    <input type="tel" class="form-control" value="+91-9999999999" placeholder="Enter phone">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Department</label>
+                <select class="form-control">
+                    <option>Administration</option>
+                    <option>Engineering</option>
+                    <option>HR</option>
+                </select>
+            </div>
+
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
+                <h4 style="margin-bottom: 15px;">Change Password</h4>
+                <div class="form-group">
+                    <label class="form-label">Current Password</label>
+                    <input type="password" class="form-control" placeholder="Enter current password">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">New Password</label>
+                        <input type="password" class="form-control" placeholder="Enter new password">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Confirm Password</label>
+                        <input type="password" class="form-control" placeholder="Confirm new password">
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; text-align: right;">
+                <button class="btn" style="background: transparent; border: 1px solid var(--border); color: var(--dark); margin-right: 10px;">Cancel</button>
+                <button class="btn btn-primary">Save Changes</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Role Management</h3>
+            </div>
+
+            <div class="role-item">
+                <div class="role-info">
+                    <div class="role-name">Administrator <span class="badge badge-admin">ADMIN</span></div>
+                    <div class="role-desc">Full access to all features and settings</div>
+                </div>
+                <div class="role-actions">
+                    <button>Edit</button>
+                    <button>View Permissions</button>
+                </div>
+            </div>
+
+            <div class="role-item">
+                <div class="role-info">
+                    <div class="role-name">HR Manager <span class="badge badge-manager">MANAGER</span></div>
+                    <div class="role-desc">Access to HR functions and employee management</div>
+                </div>
+                <div class="role-actions">
+                    <button>Edit</button>
+                    <button>View Permissions</button>
+                </div>
+            </div>
+
+            <div class="role-item">
+                <div class="role-info">
+                    <div class="role-name">Employee <span class="badge badge-user">USER</span></div>
+                    <div class="role-desc">Basic access to personal dashboard and records</div>
+                </div>
+                <div class="role-actions">
+                    <button>Edit</button>
+                    <button>View Permissions</button>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" style="margin-top: 15px;">Add New Role</button>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">System Settings</h3>
+            </div>
+
+            <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border);">
+                    <div>
+                        <div style="font-weight: 600; margin-bottom: 5px;">Email Notifications</div>
+                        <div style="font-size: 13px; color: var(--gray);">Receive email notifications for important events</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border);">
+                    <div>
+                        <div style="font-weight: 600; margin-bottom: 5px;">Dark Mode</div>
+                        <div style="font-size: 13px; color: var(--gray);">Enable dark theme for the interface</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid var(--border);">
+                    <div>
+                        <div style="font-weight: 600; margin-bottom: 5px;">Two-Factor Authentication</div>
+                        <div style="font-size: 13px; color: var(--gray);">Add an extra layer of security to your account</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div style="text-align: right; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
+                <button class="btn btn-danger">Delete Account</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

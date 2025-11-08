@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+
+{% block title %}Payroll - WorkZen{% endblock %}
+
+{% block nav_payroll %}active{% endblock %}
+
+{% block page_title %}Payroll Management{% endblock %}
+
+{% block extra_css %}
+<style>
+    .payslip-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .payslip-card {
+        background: var(--white);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 20px;
+        transition: transform 0.3s;
+    }
+
+    .payslip-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .payslip-header {
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 15px;
+        margin-bottom: 15px;
+    }
+
+    .payslip-month {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    .payslip-date {
+        font-size: 12px;
+        color: var(--gray);
+    }
+
+    .payslip-amount {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin-bottom: 15px;
+    }
+
+    .payslip-breakdown {
+        font-size: 13px;
+        margin-bottom: 15px;
+    }
+
+    .breakdown-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--light-gray);
+    }
+
+    .breakdown-label {
+        color: var(--gray);
+    }
+
+    .breakdown-value {
+        font-weight: 600;
+    }
+
+    .payslip-action {
+        display: flex;
+        gap: 10px;
+    }
+
+    .payslip-action button {
+        flex: 1;
+        padding: 8px 12px;
+        border: 1px solid var(--border);
+        background: transparent;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.3s;
+    }
+
+    .payslip-action button:hover {
+        background: var(--light-gray);
+    }
+
+    .salary-structure {
+        margin-bottom: 20px;
+    }
+
+    .structure-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--light-gray);
+    }
+
+    .structure-row:last-child {
+        border-bottom: 2px solid var(--border);
+        font-weight: 600;
+        padding-top: 15px;
+    }
+
+    .structure-label {
+        color: var(--dark);
+    }
+
+    .structure-value {
+        text-align: right;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Recent Payslips</h3>
+        <button class="btn btn-outline">Download All</button>
+    </div>
+
+    <div class="payslip-grid">
+        <div class="payslip-card">
+            <div class="payslip-header">
+                <div class="payslip-month">November 2025</div>
+                <div class="payslip-date">Processed: Nov 1, 2025</div>
+            </div>
+            <div class="payslip-amount">₹52,500</div>
+            <div class="payslip-breakdown">
+                <div class="breakdown-item">
+                    <span class="breakdown-label">Basic Salary</span>
+                    <span class="breakdown-value">₹40,000</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="breakdown-label">HRA</span>
+                    <span class="breakdown-value">₹8,000</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="breakdown-label">Deductions</span>
+                    <span class="breakdown-value">₹-5,500</span>
+                </div>
+            </div>
+            <div class="payslip-action">
+                <button>View</button>
+                <button>Download</button>
+            </div>
+        </div>
+
+        <div class="payslip-card">
+            <div class="payslip-header">
+                <div class="payslip-month">October 2025</div>
+                <div class="payslip-date">Processed: Oct 1, 2025</div>
+            </div>
+            <div class="payslip-amount">₹52,500</div>
+            <div class="payslip-breakdown">
+                <div class="breakdown-item">
+                    <span class="breakdown-label">Basic Salary</span>
+                    <span class="breakdown-value">₹40,000</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="breakdown-label">HRA</span>
+                    <span class="breakdown-value">₹8,000</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="breakdown-label">Deductions</span>
+                    <span class="breakdown-value">₹-5,500</span>
+                </div>
+            </div>
+            <div class="payslip-action">
+                <button>View</button>
+                <button>Download</button>
+            </div>
+        </div>
+
+        <div class="payslip-card">
+            <div class="payslip-header">
+                <div class="payslip-month">September 2025</div>
+                <div class="payslip-date">Processed: Sep 1, 2025</div>
+            </div>
+            <div class="payslip-amount">₹52,500</div>
+            <div class="payslip-breakdown">
+                <div class="breakdown-item">
+                    <span class="breakdown-label">Basic Salary</span>
+                    <span class="breakdown-value">₹40,000</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="breakdown-label">HRA</span>
+                    <span class="breakdown-value">₹8,000</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="breakdown-label">Deductions</span>
+                    <span class="breakdown-value">₹-5,500</span>
+                </div>
+            </div>
+            <div class="payslip-action">
+                <button>View</button>
+                <button>Download</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Salary Structure - November 2025</h3>
+    </div>
+
+    <div class="salary-structure">
+        <div style="font-weight: 600; margin-bottom: 15px; color: var(--dark);">EARNINGS</div>
+        <div class="structure-row">
+            <span class="structure-label">Basic Salary</span>
+            <span class="structure-value">₹40,000</span>
+        </div>
+        <div class="structure-row">
+            <span class="structure-label">House Rent Allowance (HRA)</span>
+            <span class="structure-value">₹8,000</span>
+        </div>
+        <div class="structure-row">
+            <span class="structure-label">Dearness Allowance (DA)</span>
+            <span class="structure-value">₹2,000</span>
+        </div>
+        <div class="structure-row">
+            <span class="structure-label">Gross Earnings</span>
+            <span class="structure-value">₹50,000</span>
+        </div>
+    </div>
+
+    <div class="salary-structure">
+        <div style="font-weight: 600; margin-bottom: 15px; color: var(--dark);">DEDUCTIONS</div>
+        <div class="structure-row">
+            <span class="structure-label">Provident Fund (PF)</span>
+            <span class="structure-value">₹-2,500</span>
+        </div>
+        <div class="structure-row">
+            <span class="structure-label">Income Tax</span>
+            <span class="structure-value">₹-2,000</span>
+        </div>
+        <div class="structure-row">
+            <span class="structure-label">Professional Tax</span>
+            <span class="structure-value">₹-1,000</span>
+        </div>
+        <div class="structure-row">
+            <span class="structure-label">Net Salary</span>
+            <span class="structure-value">₹52,500</span>
+        </div>
+    </div>
+</div>
+{% endblock %}

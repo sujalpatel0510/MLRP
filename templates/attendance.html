@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance - WorkZen{% endblock %}
+
+{% block nav_attendance %}active{% endblock %}
+
+{% block page_title %}Attendance{% endblock %}
+
+{% block content %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-header">
+            <div>
+                <div class="stat-value">231</div>
+                <div class="stat-label">Present Today</div>
+            </div>
+            <div class="stat-icon" style="background: #d1fae5;">
+                <svg width="24" height="24" fill="#10b981" viewBox="0 0 24 24">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-header">
+            <div>
+                <div class="stat-value">8</div>
+                <div class="stat-label">Absent Today</div>
+            </div>
+            <div class="stat-icon" style="background: #fee2e2;">
+                <svg width="24" height="24" fill="#ef4444" viewBox="0 0 24 24">
+                    <path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-header">
+            <div>
+                <div class="stat-value">6</div>
+                <div class="stat-label">Late Arrivals</div>
+            </div>
+            <div class="stat-icon" style="background: #fef3c7;">
+                <svg width="24" height="24" fill="#f59e0b" viewBox="0 0 24 24">
+                    <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-header">
+            <div>
+                <div class="stat-value">94.2%</div>
+                <div class="stat-label">Attendance Rate</div>
+            </div>
+            <div class="stat-icon" style="background: #dbeafe;">
+                <svg width="24" height="24" fill="#2563eb" viewBox="0 0 24 24">
+                    <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Today's Attendance</h3>
+        <button class="btn btn-primary">Mark Attendance</button>
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Employee ID</th>
+                <th>Name</th>
+                <th>Department</th>
+                <th>Check In</th>
+                <th>Check Out</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>EMP001</td>
+                <td>John Doe</td>
+                <td>Engineering</td>
+                <td>09:00 AM</td>
+                <td>06:00 PM</td>
+                <td><span class="badge badge-success">Present</span></td>
+            </tr>
+            <tr>
+                <td>EMP002</td>
+                <td>Jane Smith</td>
+                <td>HR</td>
+                <td>08:55 AM</td>
+                <td>05:50 PM</td>
+                <td><span class="badge badge-success">Present</span></td>
+            </tr>
+            <tr>
+                <td>EMP003</td>
+                <td>Mike Johnson</td>
+                <td>Sales</td>
+                <td>09:15 AM</td>
+                <td>-</td>
+                <td><span class="badge badge-warning">Late</span></td>
+            </tr>
+            <tr>
+                <td>EMP004</td>
+                <td>Sarah Williams</td>
+                <td>Marketing</td>
+                <td>-</td>
+                <td>-</td>
+                <td><span class="badge badge-danger">Absent</span></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Attendance Summary - November 2025</h3>
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Department</th>
+                <th>Total Employees</th>
+                <th>Present</th>
+                <th>Absent</th>
+                <th>Attendance %</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Engineering</td>
+                <td>50</td>
+                <td>48</td>
+                <td>2</td>
+                <td style="color: var(--success-color); font-weight: 600;">96%</td>
+            </tr>
+            <tr>
+                <td>Sales</td>
+                <td>40</td>
+                <td>36</td>
+                <td>4</td>
+                <td style="color: var(--success-color); font-weight: 600;">90%</td>
+            </tr>
+            <tr>
+                <td>HR</td>
+                <td>15</td>
+                <td>14</td>
+                <td>1</td>
+                <td style="color: var(--success-color); font-weight: 600;">93%</td>
+            </tr>
+            <tr>
+                <td>Marketing</td>
+                <td>25</td>
+                <td>24</td>
+                <td>1</td>
+                <td style="color: var(--success-color); font-weight: 600;">96%</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
