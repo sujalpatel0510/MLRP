@@ -48,20 +48,36 @@
         }
 
         .logo {
-            padding: 0 20px 20px;
+            padding: 20px 24px;
             border-bottom: 1px solid var(--border);
-            margin-bottom: 20px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-image {
+            width: 45px;
+            height: 45px;
+            object-fit: contain;
+        }
+
+        .logo-text {
+            flex: 1;
         }
 
         .logo h2 {
             color: var(--primary-color);
             font-size: 24px;
             font-weight: 700;
+            letter-spacing: 1px;
+            margin: 0;
         }
 
         .logo p {
             font-size: 12px;
             color: var(--gray);
+            margin: 2px 0 0 0;
         }
 
         .nav-menu {
@@ -79,6 +95,8 @@
             color: var(--gray);
             text-decoration: none;
             transition: all 0.3s;
+            gap: 12px;
+            font-size: 15px;
         }
 
         .nav-link:hover,
@@ -86,12 +104,17 @@
             background: var(--light-gray);
             color: var(--primary-color);
             border-left: 3px solid var(--primary-color);
+            font-weight: 600;
+        }
+
+        .nav-link span {
+            width: 26px;
+            display: inline-block;
         }
 
         .nav-link svg {
             width: 20px;
             height: 20px;
-            margin-right: 12px;
         }
 
         /* Header Styles */
@@ -230,6 +253,13 @@
             color: var(--dark);
         }
 
+        .btn-link {
+            background: transparent;
+            border: none;
+            color: var(--primary-color);
+            padding: 5px 10px;
+        }
+
         /* Forms */
         .form-group {
             margin-bottom: 20px;
@@ -356,118 +386,100 @@
                 left: 0;
             }
         }
-
-        .nav-link {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 15px;
+        .logo-image {
+  width: 85px;
+  height: 85px;
+  object-fit: contain;
 }
-
-.nav-link i {
-    width: 20px;
-    height: 20px;
-}
-
-.nav-link.active {
-    background: var(--light-gray);
-    color: var(--primary-color);
-    font-weight: 600;
-    border-left: 3px solid var(--primary-color);
-}
-
 
         {% block extra_css %}{% endblock %}
     </style>
 </head>
 <body>
+    <!-- Sidebar -->
     <aside class="sidebar">
-    <div class="logo" style="padding: 24px 24px 10px 24px; border-bottom: 1px solid var(--border);">
-        <h2 style="color: #6366f1; font-weight: bold; letter-spacing: 1px;">
-            WorkZen
-        </h2>
-        <p style="font-size: 14px; color: #6b7280; margin-top: 2px;">HR Management System</p>
-    </div>
-    <nav>
-        <ul class="nav-menu" style="margin-top: 6px;">
-            <li class="nav-item">
-                <a href="{{ url_for('dashboard') }}" class="nav-link {% block nav_dashboard %}{% endblock %}">
-                    <span style="width: 26px;display:inline-block;">
-                        <svg fill="none" stroke="#6366f1" width="20" height="20" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                        </svg>
-                    </span>
-                    Dashboard
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ url_for('employees_page') }}" class="nav-link {% block nav_employees %}{% endblock %}">
-                    <span style="width: 26px;display:inline-block;">
-                        <svg fill="none" stroke="#6b7280" width="20" height="20" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
-                        </svg>
-                    </span>
-                    Employees
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ url_for('attendance_page') }}" class="nav-link {% block nav_attendance %}{% endblock %}">
-                    <span style="width: 26px;display:inline-block;">
-                        <svg fill="none" stroke="#6b7280" width="20" height="20" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                        </svg>
-                    </span>
-                    Attendance
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ url_for('timeoff') }}" class="nav-link {% block nav_timeoff %}{% endblock %}">
-                    <span style="width: 26px;display:inline-block;">
-                        <svg fill="none" stroke="#6b7280" width="20" height="20" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                        </svg>
-                    </span>
-                    Time Off
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ url_for('payroll') }}" class="nav-link {% block nav_payroll %}{% endblock %}">
-                    <span style="width: 26px;display:inline-block;">
-                        <svg fill="none" stroke="#6b7280" width="20" height="20" stroke-width="2" viewBox="0 0 24 24">
-                            <circle cx="12" cy="12" r="10" />
-                            <text x="12" y="16" text-anchor="middle" font-size="10" fill="#6b7280" font-family="sans-serif">₹</text>
-                        </svg>
-                    </span>
-                    Payroll
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ url_for('reports') }}" class="nav-link {% block nav_reports %}{% endblock %}">
-                    <span style="width: 26px;display:inline-block;">
-                        <svg fill="none" stroke="#6b7280" width="20" height="20" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
-                    </span>
-                    Reports
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ url_for('settings') }}" class="nav-link {% block nav_settings %}{% endblock %}">
-                    <span style="width: 26px;display:inline-block;">
-                        <svg fill="none" stroke="#6b7280" width="20" height="20" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37z"/>
-                            <circle cx="12" cy="12" r="3"/>
-                        </svg>
-                    </span>
-                    Settings
-                </a>
-            </li>
-        </ul>
-    </nav>
-</aside>
-
-
-
+        <div class="logo">
+            <img src="{{ url_for('static', filename='images/workzen_logo.jpg') }}" alt="WorkZen Logo" class="logo-image">
+            <div class="logo-text">
+                <h2>WorkZen</h2>
+                <p>HR Management System</p>
+            </div>
+        </div>
+        <nav>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('dashboard') }}" class="nav-link {% block nav_dashboard %}{% endblock %}">
+                        <span>
+                            <svg fill="none" stroke="#6366f1" width="20" height="20" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                            </svg>
+                        </span>
+                        Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('employees_page') }}" class="nav-link {% block nav_employees %}{% endblock %}">
+                        <span>
+                            <svg fill="none" stroke="#6b7280" width="20" height="20" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                            </svg>
+                        </span>
+                        Employees
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('attendance_page') }}" class="nav-link {% block nav_attendance %}{% endblock %}">
+                        <span>
+                            <svg fill="none" stroke="#6b7280" width="20" height="20" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                            </svg>
+                        </span>
+                        Attendance
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('timeoff') }}" class="nav-link {% block nav_timeoff %}{% endblock %}">
+                        <span>
+                            <svg fill="none" stroke="#6b7280" width="20" height="20" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                        </span>
+                        Time Off
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('payroll') }}" class="nav-link {% block nav_payroll %}{% endblock %}">
+                        <span>
+                            <svg fill="none" stroke="#6b7280" width="20" height="20" stroke-width="2" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" />
+                                <text x="12" y="16" text-anchor="middle" font-size="10" fill="#6b7280" font-family="sans-serif">₹</text>
+                            </svg>
+                        </span>
+                        Payroll
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('reports') }}" class="nav-link {% block nav_reports %}{% endblock %}">
+                        <span>
+                            <svg fill="none" stroke="#6b7280" width="20" height="20" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                        </span>
+                        Reports
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('settings') }}" class="nav-link {% block nav_settings %}{% endblock %}">
+                        <span>
+                            <svg fill="none" stroke="#6b7280" width="20" height="20" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </span>
+                        Settings
+                    </a>
+                </li>
+            </ul>
         </nav>
     </aside>
 
@@ -478,8 +490,6 @@
         </div>
 
         <div class="header-right">
-            
-
             <div class="user-profile">
                 <div class="user-avatar">
                     {{ user.full_name[0] if user and user.full_name else 'U' }}
@@ -495,7 +505,6 @@
             </div>
 
             <a href="{{ url_for('logout') }}" class="btn btn-outline" style="margin-left: 15px; display: flex; align-items: center; gap: 5px;">
-                <!-- Logout icon SVG -->
                 Logout
             </a>
         </div>
@@ -508,9 +517,9 @@
         {% endblock %}
     </main>
 
-        <script>
-    lucide.createIcons();
-</script>
+    <script>
+        lucide.createIcons();
+    </script>
 
     {% block extra_js %}{% endblock %}
 </body>

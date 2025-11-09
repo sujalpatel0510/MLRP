@@ -255,9 +255,10 @@
             <button id="checkInBtn" class="btn-attendance btn-checkin" onclick="handleCheckIn()">
                 <i class="fas fa-sign-in-alt"></i> Check In
             </button>
-            <button id="checkOutBtn" class="btn-attendance btn-checkout" onclick="handleCheckOut()" disabled>
-                <i class="fas fa-sign-out-alt"></i> Check Out
-            </button>
+            <button id="checkOutBtn" class="btn-attendance btn-checkout">
+  <i class="fas fa-sign-out-alt"></i> Check Out
+</button>
+
         </div>
 
         <p style="color: var(--gray); font-size: 14px;">
@@ -452,6 +453,15 @@
             alertBox.classList.remove('show');
         }, 5000);
     }
+    const checkOutBtn = document.getElementById('checkOutBtn');
+
+checkOutBtn.addEventListener('click', function() {
+  if (checkOutBtn.classList.contains('btn-attendance-disabled') || checkOutBtn.disabled) {
+    showAlert('error', "You can't checkout yet.");
+    return;
+  }
+  handleCheckOut();
+});
 
     // Initialize
     updateTime();

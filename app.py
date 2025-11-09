@@ -76,9 +76,10 @@ class User(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
-    leaves = db.relationship('Leave', backref='employee', lazy=True, foreign_keys='Leave.user_id')
-    payslips = db.relationship('Payslip', backref='employee', lazy=True)
-    attendances = db.relationship('Attendance', backref='employee', lazy=True)
+    leaves = db.relationship('Leave', backref='employee', lazy=True, foreign_keys='[Leave.user_id]', cascade='save-update')
+
+    payslips = db.relationship('Payslip', backref='employee', lazy=True, cascade='save-update')
+    attendances = db.relationship('Attendance', backref='employee', lazy=True, cascade='save-update')
     
 
     def set_password(self, password):
@@ -461,12 +462,54 @@ def initialize_all_leave_balances():
 @app.route('/timeoff')
 @login_required
 def timeoff():
-    user = User.query.get(session.get('user_id'))
-    # Retrieve user's leaves and leave balances from database
-    leaves = Leave.query.filter_by(user_id=user.id).order_by(Leave.created_at.desc()).all()
-    leave_balance = LeaveBalance.query.filter_by(user_id=user.id, year=datetime.now().year).all()
+    """Time off / Leave management page"""
+    user_id = session.get('user_id')
+    user = User.query.get(user_id)
+    current_year = datetime.now().year
+    today = datetime.now().date()
 
-    return render_template('timeoff.html', user=user, leaves=leaves, leave_balance=leave_balance, current_year=datetime.now().year)
+    # Get user's own leaves
+    leaves = Leave.query.filter_by(user_id=user_id).order_by(Leave.created_at.desc()).all()
+    
+    # Get user's leave balance
+    leave_balance = LeaveBalance.query.filter_by(user_id=user_id, year=current_year).all()
+
+    # Get ALL leave requests (for "All Leave Requests" tab - everyone can see)
+    all_leaves = Leave.query.order_by(Leave.created_at.desc()).all()
+    
+    # For HR Officers and Admins - get pending approvals
+    pending_leaves = []
+    pending_count = 0
+    approved_today = 0
+    rejected_today = 0
+    
+    if user.role in ['HR_OFFICER', 'ADMIN']:
+        # Get pending leave requests
+        pending_leaves = Leave.query.filter_by(status='Pending').order_by(Leave.created_at.desc()).all()
+        pending_count = len(pending_leaves)
+        
+        # Get today's approved requests
+        approved_today = Leave.query.filter(
+            Leave.status == 'Approved',
+            Leave.updated_at >= today
+        ).count()
+        
+        # Get today's rejected requests
+        rejected_today = Leave.query.filter(
+            Leave.status == 'Rejected',
+            Leave.updated_at >= today
+        ).count()
+
+    return render_template('timeoff.html',
+                         user=user,
+                         leaves=leaves,
+                         leave_balance=leave_balance,
+                         current_year=current_year,
+                         all_leaves=all_leaves,
+                         pending_leaves=pending_leaves,
+                         pending_count=pending_count,
+                         approved_today=approved_today,
+                         rejected_today=rejected_today)
 
 
 
@@ -566,7 +609,7 @@ def create_employee():
         
         user.set_password(temp_password)
         db.session.add(user)
-        
+        db.session.commit()
         # Create default leave balances
         current_year = datetime.now().year
         leave_types = [
@@ -649,32 +692,27 @@ def apply_leave():
     try:
         user_id = session.get('user_id')
         data = request.get_json()
-        
+
         start_date = datetime.strptime(data.get('start_date'), '%Y-%m-%d').date()
         end_date = datetime.strptime(data.get('end_date'), '%Y-%m-%d').date()
         leave_type = data.get('leave_type')
         reason = data.get('reason')
-        
+
         num_days = (end_date - start_date).days + 1
         current_year = datetime.now().year
-        
-        # Check if leave balance exists, create if not
+
+        # Find HR Officer (first available)
+        hr_officer = User.query.filter_by(role='HR_OFFICER', is_active=True).first()
+
+        # Check or create leave balance
         balance = LeaveBalance.query.filter_by(
             user_id=user_id,
             leave_type=leave_type,
             year=current_year
         ).first()
-        
-        # If balance doesn't exist, create it automatically
+
         if not balance:
-            default_days = {
-                'Annual': 20,
-                'Sick': 10,
-                'Casual': 5,
-                'Maternity': 90,
-                'Unpaid': 10
-            }
-            
+            default_days = {'Annual': 20, 'Sick': 10, 'Casual': 5, 'Maternity': 90, 'Unpaid': 10}
             balance = LeaveBalance(
                 user_id=user_id,
                 leave_type=leave_type,
@@ -685,14 +723,13 @@ def apply_leave():
             )
             db.session.add(balance)
             db.session.commit()
-        
-        # Check if sufficient balance
+
         if balance.remaining_days < num_days:
             return jsonify(
                 error=f'Insufficient leave balance. Available: {balance.remaining_days} days, Requested: {num_days} days'
             ), 400
-        
-        # Create leave request with CORRECT UNDERSCORE COLUMN NAMES
+
+        # Create leave request assigned to HR Officer
         leave = Leave(
             user_id=user_id,
             leave_type=leave_type,
@@ -700,28 +737,31 @@ def apply_leave():
             end_date=end_date,
             reason=reason,
             number_of_days=num_days,
-            status='Pending'
+            status='Pending',
+            approved_by=hr_officer.id if hr_officer else None
         )
-        
+
         db.session.add(leave)
         db.session.commit()
-        
+
         return jsonify(
-            message='Leave request submitted successfully',
-            leave_id=leave.id
+            message='Leave request submitted successfully and sent to HR Officer for approval',
+            leave_id=leave.id,
+            assigned_to=hr_officer.full_name if hr_officer else 'No HR Officer assigned'
         ), 201
-        
+
     except Exception as e:
         db.session.rollback()
         return jsonify(error=str(e)), 500
+
     
 
 
 @app.route('/api/leaves/approve/<int:leave_id>', methods=['PUT'])
 @login_required
-@role_required('ADMIN', 'PAYROLL_OFFICER')
+@role_required('ADMIN', 'HR_OFFICER')  # Added HR_OFFICER here
 def approve_leave(leave_id):
-    """Approve leave request (Admin or Payroll Officer)"""
+    """Approve leave request (Admin or HR Officer)"""
     leave = Leave.query.get(leave_id)
     if not leave:
         return jsonify({'error': 'Leave request not found'}), 404
@@ -734,6 +774,7 @@ def approve_leave(leave_id):
         leave_type=leave.leave_type,
         year=datetime.now().year
     ).first()
+    
     if balance:
         balance.used_days += leave.number_of_days
         balance.remaining_days = balance.total_days - balance.used_days
@@ -741,11 +782,12 @@ def approve_leave(leave_id):
     db.session.commit()
     return jsonify({'message': 'Leave approved successfully'}), 200
 
+
 @app.route('/api/leaves/reject/<int:leave_id>', methods=['PUT'])
 @login_required
-@role_required('ADMIN', 'PAYROLL_OFFICER')
+@role_required('ADMIN', 'HR_OFFICER')  # Added HR_OFFICER here
 def reject_leave(leave_id):
-    """Reject leave request (Admin or Payroll Officer)"""
+    """Reject leave request (Admin or HR Officer)"""
     leave = Leave.query.get(leave_id)
     if not leave:
         return jsonify({'error': 'Leave request not found'}), 404
@@ -754,6 +796,7 @@ def reject_leave(leave_id):
     leave.approved_by = session.get('user_id')
     db.session.commit()
     return jsonify({'message': 'Leave rejected successfully'}), 200
+
 
 # --- Payroll Routes ---
 

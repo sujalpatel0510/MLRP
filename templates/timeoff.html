@@ -113,6 +113,126 @@
         padding: 30px;
         color: #999;
     }
+
+    .action-buttons {
+        display: flex;
+        gap: 5px;
+    }
+
+    .btn-action {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .btn-approve {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .btn-approve:hover {
+        background-color: #218838;
+    }
+
+    .btn-reject {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .btn-reject:hover {
+        background-color: #c82333;
+    }
+
+    .btn-action:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #ddd;
+    }
+
+    .tab {
+        padding: 10px 20px;
+        cursor: pointer;
+        border: none;
+        background: none;
+        font-size: 14px;
+        font-weight: 600;
+        color: #666;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s;
+    }
+
+    .tab.active {
+        color: #3498db;
+        border-bottom-color: #3498db;
+    }
+
+    .tab:hover {
+        color: #3498db;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+
+    .stat-card {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 15px;
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #3498db;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: #666;
+        text-transform: uppercase;
+        margin-top: 5px;
+    }
+
+    .employee-info {
+        font-size: 13px;
+        color: #666;
+    }
+
+    .filter-section {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+
+    .filter-input {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 13px;
+    }
 </style>
 {% endblock %}
 
@@ -122,115 +242,277 @@
     <div id="successAlert" class="alert alert-success"></div>
     <div id="errorAlert" class="alert alert-error"></div>
 
-    <!-- Leave Application Form -->
-    <div class="form-container">
-        <h3>Apply for Leave</h3>
-        <form id="leaveForm">
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="leaveType">Leave Type *</label>
-                    <select id="leaveType" name="leave_type" required>
-                        <option value="">Select Leave Type</option>
-                        <option value="Annual">Annual Leave</option>
-                        <option value="Sick">Sick Leave</option>
-                        <option value="Casual">Casual Leave</option>
-                        <option value="Maternity">Maternity Leave</option>
-                        <option value="Unpaid">Unpaid Leave</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="startDate">Start Date *</label>
-                    <input type="date" id="startDate" name="start_date" required>
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="endDate">End Date *</label>
-                    <input type="date" id="endDate" name="end_date" required>
-                </div>
-                <div class="form-group">
-                    <label for="numberOfDays">Number of Days</label>
-                    <input type="number" id="numberOfDays" name="number_of_days" readonly value="0">
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="reason">Reason for Leave *</label>
-                <textarea id="reason" name="reason" rows="4" placeholder="Please provide a reason for your leave request..." required></textarea>
-            </div>
-
-            <button type="submit" class="btn-submit">Submit Request</button>
-        </form>
-    </div>
-
-    <!-- Leave Balance Section -->
-    {% if leave_balance %}
-    <div class="form-container">
-        <h3>Leave Balance - {{ current_year }}</h3>
-        <table class="leaves-table">
-            <thead>
-                <tr>
-                    <th>Leave Type</th>
-                    <th>Total Days</th>
-                    <th>Used Days</th>
-                    <th>Remaining Days</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for balance in leave_balance %}
-                <tr>
-                    <td>{{ balance.leave_type }}</td>
-                    <td>{{ balance.total_days }}</td>
-                    <td>{{ balance.used_days }}</td>
-                    <td><strong>{{ balance.remaining_days }}</strong></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% endif %}
-
-    <!-- Your Leave Requests -->
-    <div class="form-container">
-        <h3>Your Leave Requests</h3>
-        {% if leaves %}
-        <table class="leaves-table">
-            <thead>
-                <tr>
-                    <th>Leave Type</th>
-                    <th>Start Date</th>
-                    <th>End Date</th>
-                    <th>Days</th>
-                    <th>Status</th>
-                    <th>Approved By</th>
-                    <th>Reason</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for leave in leaves %}
-                <tr>
-                    <td>{{ leave.leave_type }}</td>
-                    <td>{{ leave.start_date.strftime('%d %b %Y') }}</td>
-                    <td>{{ leave.end_date.strftime('%d %b %Y') }}</td>
-                    <td>{{ leave.number_of_days }}</td>
-                    <td>
-                        <span class="status-badge status-{{ leave.status.lower() }}">
-                            {{ leave.status }}
-                        </span>
-                    </td>
-                    <td>{% if leave.approver %}{{ leave.approver.full_name }}{% else %}Pending{% endif %}</td>
-                    <td>{{ leave.reason or 'N/A' }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <div class="no-records">
-            <p>No leave records found.</p>
-        </div>
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab('myLeaves')">My Leaves</button>
+        <button class="tab" onclick="switchTab('allRequests')">All Leave Requests</button>
+        {% if user.role in ['HR_OFFICER', 'ADMIN'] %}
+        <button class="tab" onclick="switchTab('pendingApprovals')">Pending Approvals</button>
         {% endif %}
     </div>
+
+    <!-- My Leaves Tab -->
+    <div id="myLeaves" class="tab-content active">
+        <!-- Leave Application Form -->
+        <div class="form-container">
+            <h3>Apply for Leave</h3>
+            <form id="leaveForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="leaveType">Leave Type *</label>
+                        <select id="leaveType" name="leave_type" required>
+                            <option value="">Select Leave Type</option>
+                            <option value="Annual">Annual Leave</option>
+                            <option value="Sick">Sick Leave</option>
+                            <option value="Casual">Casual Leave</option>
+                            <option value="Maternity">Maternity Leave</option>
+                            <option value="Unpaid">Unpaid Leave</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="startDate">Start Date *</label>
+                        <input type="date" id="startDate" name="start_date" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="endDate">End Date *</label>
+                        <input type="date" id="endDate" name="end_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="numberOfDays">Number of Days</label>
+                        <input type="number" id="numberOfDays" name="number_of_days" readonly value="0">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="reason">Reason for Leave *</label>
+                    <textarea id="reason" name="reason" rows="4" placeholder="Please provide a reason for your leave request..." required></textarea>
+                </div>
+
+                <button type="submit" class="btn-submit">Submit Request</button>
+            </form>
+        </div>
+
+        <!-- Leave Balance Section -->
+        {% if leave_balance %}
+        <div class="form-container">
+            <h3>Leave Balance - {{ current_year }}</h3>
+            <table class="leaves-table">
+                <thead>
+                    <tr>
+                        <th>Leave Type</th>
+                        <th>Total Days</th>
+                        <th>Used Days</th>
+                        <th>Remaining Days</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for balance in leave_balance %}
+                    <tr>
+                        <td>{{ balance.leave_type }}</td>
+                        <td>{{ balance.total_days }}</td>
+                        <td>{{ balance.used_days }}</td>
+                        <td><strong>{{ balance.remaining_days }}</strong></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        <!-- Your Leave Requests -->
+        <div class="form-container">
+            <h3>Your Leave Requests</h3>
+            {% if leaves %}
+            <table class="leaves-table">
+                <thead>
+                    <tr>
+                        <th>Leave Type</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Days</th>
+                        <th>Status</th>
+                        <th>Approved By</th>
+                        <th>Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for leave in leaves %}
+                    <tr>
+                        <td>{{ leave.leave_type }}</td>
+                        <td>{{ leave.start_date.strftime('%d %b %Y') }}</td>
+                        <td>{{ leave.end_date.strftime('%d %b %Y') }}</td>
+                        <td>{{ leave.number_of_days }}</td>
+                        <td>
+                            <span class="status-badge status-{{ leave.status.lower() }}">
+                                {{ leave.status }}
+                            </span>
+                        </td>
+                        <td>{% if leave.approver %}{{ leave.approver.full_name }}{% else %}Pending{% endif %}</td>
+                        <td>{{ leave.reason or 'N/A' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="no-records">
+                <p>No leave records found.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- All Leave Requests Tab -->
+    <div id="allRequests" class="tab-content">
+        <div class="form-container">
+            <h3>All Leave Requests</h3>
+            
+            <!-- Filter Section -->
+            <div class="filter-section">
+                <select id="statusFilter" class="filter-input" onchange="filterRequests()">
+                    <option value="">All Status</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Rejected">Rejected</option>
+                </select>
+                <input type="text" id="employeeSearch" class="filter-input" placeholder="Search employee..." onkeyup="filterRequests()">
+            </div>
+
+            {% if all_leaves %}
+            <table class="leaves-table" id="allRequestsTable">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Leave Type</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Days</th>
+                        <th>Status</th>
+                        <th>Reason</th>
+                        {% if user.role in ['HR_OFFICER', 'ADMIN'] %}
+                        <th>Actions</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for leave in all_leaves %}
+                    <tr data-status="{{ leave.status }}" data-employee="{{ leave.requester.full_name|lower }}">
+                        <td>
+                            <strong>{{ leave.requester.full_name }}</strong>
+                            <div class="employee-info">{{ leave.requester.login_id }} • {{ leave.requester.department or 'N/A' }}</div>
+                        </td>
+                        <td>{{ leave.leave_type }}</td>
+                        <td>{{ leave.start_date.strftime('%d %b %Y') }}</td>
+                        <td>{{ leave.end_date.strftime('%d %b %Y') }}</td>
+                        <td>{{ leave.number_of_days }}</td>
+                        <td>
+                            <span class="status-badge status-{{ leave.status.lower() }}">
+                                {{ leave.status }}
+                            </span>
+                        </td>
+                        <td>{{ leave.reason or 'N/A' }}</td>
+                        {% if user.role in ['HR_OFFICER', 'ADMIN'] %}
+                        <td>
+                            {% if leave.status == 'Pending' %}
+                            <div class="action-buttons">
+                                <button class="btn-action btn-approve" onclick="handleLeaveAction({{ leave.id }}, 'approve')">
+                                    <i class="fas fa-check"></i> Approve
+                                </button>
+                                <button class="btn-action btn-reject" onclick="handleLeaveAction({{ leave.id }}, 'reject')">
+                                    <i class="fas fa-times"></i> Reject
+                                </button>
+                            </div>
+                            {% else %}
+                            <span style="color: #666; font-size: 12px;">{{ leave.status }}</span>
+                            {% endif %}
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="no-records">
+                <p>No leave requests found.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Pending Approvals Tab (HR Only) -->
+    {% if user.role in ['HR_OFFICER', 'ADMIN'] %}
+    <div id="pendingApprovals" class="tab-content">
+        <div class="form-container">
+            <!-- Statistics -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">{{ pending_count }}</div>
+                    <div class="stat-label">Pending Requests</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ approved_today }}</div>
+                    <div class="stat-label">Approved Today</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ rejected_today }}</div>
+                    <div class="stat-label">Rejected Today</div>
+                </div>
+            </div>
+
+            <h3>Pending Approvals</h3>
+            {% if pending_leaves %}
+            <table class="leaves-table">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Leave Type</th>
+                        <th>Dates</th>
+                        <th>Days</th>
+                        <th>Applied On</th>
+                        <th>Reason</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for leave in pending_leaves %}
+                    <tr>
+                        <td>
+                            <strong>{{ leave.requester.full_name }}</strong>
+                            <div class="employee-info">
+                                {{ leave.requester.login_id }} • {{ leave.requester.department or 'N/A' }}
+                            </div>
+                        </td>
+                        <td>{{ leave.leave_type }}</td>
+                        <td>
+                            {{ leave.start_date.strftime('%d %b') }} - {{ leave.end_date.strftime('%d %b %Y') }}
+                        </td>
+                        <td><strong>{{ leave.number_of_days }}</strong></td>
+                        <td>{{ leave.created_at.strftime('%d %b %Y') }}</td>
+                        <td>{{ leave.reason or 'N/A' }}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-action btn-approve" onclick="handleLeaveAction({{ leave.id }}, 'approve')">
+                                    <i class="fas fa-check"></i> Approve
+                                </button>
+                                <button class="btn-action btn-reject" onclick="handleLeaveAction({{ leave.id }}, 'reject')">
+                                    <i class="fas fa-times"></i> Reject
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="no-records">
+                <p>No pending leave requests.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <script>
@@ -242,11 +524,24 @@ document.addEventListener('DOMContentLoaded', function() {
     const successAlert = document.getElementById('successAlert');
     const errorAlert = document.getElementById('errorAlert');
 
+    // Set minimum date to today
+    const today = new Date().toISOString().split('T')[0];
+    startDateInput.min = today;
+    endDateInput.min = today;
+
     // Calculate number of days when dates change
     function calculateDays() {
         if (startDateInput.value && endDateInput.value) {
             const startDate = new Date(startDateInput.value);
             const endDate = new Date(endDateInput.value);
+            
+            if (endDate < startDate) {
+                endDateInput.value = '';
+                numberOfDaysInput.value = '0';
+                showAlert(errorAlert, '❌ End date cannot be before start date', 'error');
+                return;
+            }
+            
             const diffTime = Math.abs(endDate - startDate);
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
             numberOfDaysInput.value = diffDays;
@@ -279,7 +574,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
 
             if (response.ok) {
-                showAlert(successAlert, '✅ Leave request submitted successfully!', 'success');
+                showAlert(successAlert, '✅ ' + data.message, 'success');
                 form.reset();
                 numberOfDaysInput.value = '0';
                 
@@ -305,6 +600,85 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     }
 });
+
+// Tab switching
+function switchTab(tabName) {
+    // Hide all tab contents
+    const contents = document.querySelectorAll('.tab-content');
+    contents.forEach(content => content.classList.remove('active'));
+    
+    // Remove active class from all tabs
+    const tabs = document.querySelectorAll('.tab');
+    tabs.forEach(tab => tab.classList.remove('active'));
+    
+    // Show selected tab content
+    document.getElementById(tabName).classList.add('active');
+    
+    // Add active class to clicked tab
+    event.target.classList.add('active');
+}
+
+// Filter requests
+function filterRequests() {
+    const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
+    const searchText = document.getElementById('employeeSearch').value.toLowerCase();
+    const rows = document.querySelectorAll('#allRequestsTable tbody tr');
+    
+    rows.forEach(row => {
+        const status = row.getAttribute('data-status').toLowerCase();
+        const employee = row.getAttribute('data-employee');
+        
+        const matchesStatus = !statusFilter || status === statusFilter;
+        const matchesSearch = !searchText || employee.includes(searchText);
+        
+        row.style.display = matchesStatus && matchesSearch ? '' : 'none';
+    });
+}
+
+// Handle leave actions (approve/reject)
+async function handleLeaveAction(leaveId, action) {
+    const confirmMsg = action === 'approve' 
+        ? 'Are you sure you want to approve this leave request?' 
+        : 'Are you sure you want to reject this leave request?';
+    
+    if (!confirm(confirmMsg)) {
+        return;
+    }
+    
+    const endpoint = action === 'approve' 
+        ? `/api/leaves/approve/${leaveId}` 
+        : `/api/leaves/reject/${leaveId}`;
+    
+    try {
+        const response = await fetch(endpoint, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            const successAlert = document.getElementById('successAlert');
+            successAlert.textContent = `✅ ${data.message}`;
+            successAlert.className = 'alert alert-success show';
+            
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        } else {
+            const errorAlert = document.getElementById('errorAlert');
+            errorAlert.textContent = `❌ ${data.error || 'Action failed'}`;
+            errorAlert.className = 'alert alert-error show';
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        const errorAlert = document.getElementById('errorAlert');
+        errorAlert.textContent = '❌ An error occurred. Please try again.';
+        errorAlert.className = 'alert alert-error show';
+    }
+}
 </script>
 
 {% endblock %}
