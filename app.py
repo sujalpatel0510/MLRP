@@ -18,7 +18,7 @@ from reportlab.lib.units import inch
 from flask import send_file
 import csv
 
-#git testing
+#git test
 load_dotenv()
 
 app = Flask(__name__)
