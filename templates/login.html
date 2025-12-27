@@ -233,9 +233,10 @@
         <!-- Login Form -->
         <form method="POST">
             <div class="form-group">
-                <label class="form-label">Login ID</label>
-                <input type="text" class="form-control" name="login_id" placeholder="Enter your login ID" required>
-            </div>
+    <label class="form-label">Email</label>
+    <input type="email" class="form-control" name="email" placeholder="Enter your email" required>
+</div>
+
             <div class="form-group">
                 <label class="form-label">Password</label>
                 <input type="password" class="form-control" name="password" placeholder="Enter your password" required>
@@ -245,15 +246,9 @@
                     <input type="checkbox" name="remember">
                     Remember me
                 </label>
-                <a href="#" class="forgot-link">Forgot password?</a>
             </div>
             <button type="submit" class="btn-login">Sign In</button>
         </form>
-
-        <!-- Register Link -->
-        <div class="register-link">
-            Don't have an account? <a href="/signup">Register here</a>
-        </div>
     </div>
 </body>
 </html>
