@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
+from flask import send_file
 import os
 
 load_dotenv()
@@ -92,6 +93,17 @@ class LeaveBalance(db.Model):
     
     __table_args__ = (db.UniqueConstraint('user_id', 'leave_type', 'year', name='uq_user_leave_year'),)
 
+class Achievement(db.Model):
+    __tablename__ = 'achievements'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user = db.relationship('User', backref='achievements')
+    title = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    file_url = db.Column(db.String(500), nullable=False)
+    file_size = db.Column(db.Integer)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 # ======================== DECORATORS ========================
 
@@ -178,8 +190,13 @@ def timeoff():
     # Get user's leave balance
     leave_balance = LeaveBalance.query.filter_by(user_id=user_id, year=current_year).all()
     
-    # Get ALL leave requests (for "All Leave Requests" tab)
-    all_leaves = Leave.query.order_by(Leave.created_at.desc()).all()
+    # Different behavior for different roles
+    all_leaves = []
+    if user.role in ['HOD', 'COUNSELOR']:
+        all_leaves = Leave.query.order_by(Leave.created_at.desc()).all()
+
+    else:
+        all_leaves = [leave for leave in leaves]
     
     # For Counselor and HOD - get pending approvals
     pending_leaves = []
@@ -368,7 +385,9 @@ def profile():
 
 @app.route('/api/settings/change-password', methods=['POST'])
 @login_required
+@role_required('HOD', 'COUNSELOR')
 def change_password():
+
     """Change password"""
     user = User.query.get(session.get('user_id'))
     data = request.get_json()
@@ -396,6 +415,91 @@ def update_profile():
     db.session.commit()
     
     return jsonify({'message': 'Profile updated successfully'}), 200
+
+@app.route('/api/achievements/upload', methods=['POST'])
+@login_required
+def upload_achievement():
+    try:
+        user_id = session.get('user_id')
+        title = request.form.get('title')
+        description = request.form.get('description')
+        file = request.files.get('file')
+
+        if not title or not description or not file:
+            return jsonify({'error': 'Missing fields'}), 400
+
+        if not file.filename.lower().endswith('.pdf'):
+            return jsonify({'error': 'Only PDF files allowed'}), 400
+
+        # size check: max 5 MB
+        file.seek(0, 2)
+        file_size = file.tell()
+        file.seek(0)
+
+        max_size = 5 * 1024 * 1024
+        if file_size > max_size:
+            return jsonify({'error': 'File cannot exceed 5 MB'}), 400
+
+        import secrets, os
+        os.makedirs('uploads/achievements', exist_ok=True)
+        safe_name = f"{user_id}_{secrets.token_hex(8)}.pdf"
+        path = os.path.join('uploads/achievements', safe_name)
+        file.save(path)
+
+        achievement = Achievement(
+            user_id=user_id,
+            title=title,
+            description=description,
+            file_url=f'/uploads/achievements/{safe_name}',
+            file_size=file_size,
+        )
+        db.session.add(achievement)
+        db.session.commit()
+
+        return jsonify({'message': 'Achievement uploaded successfully'}), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+    
+@app.route('/api/achievements/list')
+@login_required
+def achievements_list():
+    user_id = session.get('user_id')
+    achs = Achievement.query.filter_by(user_id=user_id).order_by(Achievement.created_at.desc()).all()
+
+    return jsonify({
+        'achievements': [
+            {
+                'id': a.id,
+                'title': a.title,
+                'description': a.description,
+                'file_url': a.file_url,
+                'created_at': a.created_at.isoformat()
+            }
+            for a in achs
+        ]
+    }), 200
+
+
+@app.route('/api/achievements/<int:achievement_id>', methods=['DELETE'])
+@login_required
+def delete_achievement(achievement_id):
+    user_id = session.get('user_id')
+    ach = Achievement.query.filter_by(id=achievement_id, user_id=user_id).first()
+    if not ach:
+        return jsonify({'error': 'Achievement not found'}), 404
+
+    # optionally delete file from disk here
+    db.session.delete(ach)
+    db.session.commit()
+    return jsonify({'message': 'Achievement deleted'}), 200
+
+
+@app.route('/uploads/achievements/<filename>')
+@login_required
+def download_achievement(filename):
+    return send_file(os.path.join('uploads/achievements', filename), as_attachment=True)
 
 
 # ======================== ERROR HANDLERS ========================

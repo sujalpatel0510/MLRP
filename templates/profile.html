@@ -1,558 +1,252 @@
 {% extends "base.html" %}
 
-{% block title %}{{ user.full_name }} - Profile{% endblock %}
-
-{% block nav_employees %}active{% endblock %}
-
-{% block page_title %}Employee Profile{% endblock %}
-
-{% block extra_css %}
-<style>
-    .profile-header {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-        color: white;
-        padding: 40px;
-        border-radius: 12px;
-        margin-bottom: 30px;
-        display: flex;
-        align-items: center;
-        gap: 30px;
-    }
-
-    .profile-avatar-large {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        background: white;
-        color: var(--primary-color);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 48px;
-        font-weight: 700;
-        flex-shrink: 0;
-    }
-
-    .profile-info {
-        flex: 1;
-    }
-
-    .profile-name {
-        font-size: 32px;
-        font-weight: 700;
-        margin-bottom: 8px;
-    }
-
-    .profile-position {
-        font-size: 18px;
-        opacity: 0.9;
-        margin-bottom: 8px;
-    }
-
-    .profile-meta {
-        display: flex;
-        gap: 20px;
-        font-size: 14px;
-        opacity: 0.9;
-    }
-
-    .profile-meta span {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    }
-
-    .profile-actions {
-        display: flex;
-        gap: 10px;
-    }
-
-    .tabs {
-        display: flex;
-        gap: 5px;
-        border-bottom: 2px solid var(--border);
-        margin-bottom: 30px;
-        overflow-x: auto;
-    }
-
-    .tab-item {
-        padding: 12px 24px;
-        cursor: pointer;
-        border-bottom: 3px solid transparent;
-        transition: all 0.3s;
-        color: var(--gray);
-        font-weight: 500;
-        white-space: nowrap;
-        background: none;
-        border-top: none;
-        border-left: none;
-        border-right: none;
-    }
-
-    .tab-item:hover,
-    .tab-item.active {
-        color: var(--primary-color);
-        border-bottom-color: var(--primary-color);
-    }
-
-    .tab-content {
-        display: none;
-    }
-
-    .tab-content.active {
-        display: block;
-    }
-
-    .info-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 20px;
-        margin-bottom: 20px;
-    }
-
-    .info-item {
-        padding: 15px;
-        background: var(--light-gray);
-        border-radius: 8px;
-    }
-
-    .info-label {
-        font-size: 12px;
-        color: var(--gray);
-        margin-bottom: 5px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .info-value {
-        font-size: 16px;
-        color: var(--dark);
-        font-weight: 600;
-    }
-
-    .timeline {
-        position: relative;
-        padding-left: 30px;
-    }
-
-    .timeline::before {
-        content: '';
-        position: absolute;
-        left: 10px;
-        top: 0;
-        bottom: 0;
-        width: 2px;
-        background: var(--border);
-    }
-
-    .timeline-item {
-        position: relative;
-        margin-bottom: 30px;
-    }
-
-    .timeline-item::before {
-        content: '';
-        position: absolute;
-        left: -24px;
-        top: 5px;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: var(--primary-color);
-        border: 3px solid white;
-        box-shadow: 0 0 0 2px var(--border);
-    }
-
-    .timeline-date {
-        font-size: 12px;
-        color: var(--gray);
-        margin-bottom: 5px;
-    }
-
-    .timeline-content {
-        background: var(--white);
-        padding: 15px;
-        border-radius: 8px;
-        border: 1px solid var(--border);
-    }
-
-    .timeline-title {
-        font-weight: 600;
-        margin-bottom: 5px;
-    }
-
-    .timeline-desc {
-        font-size: 14px;
-        color: var(--gray);
-    }
-
-    .badge-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 15px;
-    }
-
-    .badge-card {
-        background: var(--white);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 20px;
-        text-align: center;
-        transition: transform 0.3s;
-    }
-
-    .badge-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-
-    .badge-icon {
-        font-size: 48px;
-        margin-bottom: 10px;
-    }
-
-    .badge-name {
-        font-weight: 600;
-        margin-bottom: 5px;
-    }
-
-    .badge-date {
-        font-size: 12px;
-        color: var(--gray);
-    }
-
-    .back-button {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        color: var(--primary-color);
-        text-decoration: none;
-        margin-bottom: 20px;
-        font-weight: 500;
-    }
-
-    .back-button:hover {
-        text-decoration: underline;
-    }
-
-    .status-badge-inline {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 500;
-    }
-
-    .status-badge-inline.active {
-        background: #d4edda;
-        color: #155724;
-    }
-
-    .status-badge-inline.inactive {
-        background: #f8d7da;
-        color: #721c24;
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<a href="{{ url_for('employees_page') }}" class="back-button">
-    <i class="fas fa-arrow-left"></i> Back to Employees
-</a>
-
-<div class="profile-header">
-    <div class="profile-avatar-large">
-        {{ user.full_name.split()[0][0]|upper }}{{ user.full_name.split()[1][0]|upper if user.full_name.split()|length > 1 else '' }}
-    </div>
-    <div class="profile-info">
-        <div class="profile-name">{{ user.full_name }}</div>
-        <div class="profile-position">{{ user.job_position or user.job_title or 'Position Not Specified' }}</div>
-        <div class="profile-meta">
-            <span><i class="fas fa-id-card"></i> {{ user.login_id }}</span>
-            {% if user.department %}
-            <span><i class="fas fa-building"></i> {{ user.department }}</span>
-            {% endif %}
-            <span>
-                {% if user.is_active %}
-                <span class="status-badge-inline active">● Active</span>
-                {% else %}
-                <span class="status-badge-inline inactive">● Inactive</span>
-                {% endif %}
-            </span>
-        </div>
-    </div>
-    <div class="profile-actions">
-        {% if session.role in ['ADMIN', 'HR_OFFICER'] %}
-        <button class="btn" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);" onclick="alert('Edit functionality coming soon')">
-            <i class="fas fa-edit"></i> Edit Profile
-        </button>
-        {% endif %}
-    </div>
-</div>
-
-<div class="tabs">
-    <button class="tab-item active" onclick="switchTab(event, 'personal-info')">Personal Info</button>
-    <button class="tab-item" onclick="switchTab(event, 'work-info')">Work Info</button>
-    {% if session.role in ['ADMIN', 'PAYROLL_OFFICER'] or session.user_id == user.id %}
-    <button class="tab-item" onclick="switchTab(event, 'salary-info')">Salary Info</button>
-    {% endif %}
-    <button class="tab-item" onclick="switchTab(event, 'badges')">Badges & Awards</button>
-    <button class="tab-item" onclick="switchTab(event, 'certifications')">Certifications</button>
-</div>
-
-<!-- Personal Info Tab -->
-<div id="personal-info" class="tab-content active">
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Personal Information</h3>
-        </div>
-
-        <div class="info-grid">
-            <div class="info-item">
-                <div class="info-label">Full Name</div>
-                <div class="info-value">{{ user.full_name }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Date of Birth</div>
-                <div class="info-value">{{ user.date_of_birth.strftime('%B %d, %Y') if user.date_of_birth else 'Not Provided' }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Gender</div>
-                <div class="info-value">{{ user.gender or 'Not Specified' }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Nationality</div>
-                <div class="info-value">{{ user.nationality or 'Not Specified' }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Email</div>
-                <div class="info-value">{{ user.email }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Phone</div>
-                <div class="info-value">{{ user.phone or 'Not Provided' }}</div>
-            </div>
+<div class="profile-container">
+    <!-- Profile Header -->
+    <div class="profile-header">
+        <div class="header-section">
+            <h1>My Profile</h1>
+            <a href="{{ url_for('dashboard') }}" class="back-button">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
         </div>
     </div>
 
-    {% if user.emergency_contact_name %}
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Emergency Contact</h3>
-        </div>
-
-        <div class="info-grid">
-            <div class="info-item">
-                <div class="info-label">Contact Name</div>
-                <div class="info-value">{{ user.emergency_contact_name }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Relationship</div>
-                <div class="info-value">{{ user.emergency_contact_relation or 'Not Specified' }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Phone Number</div>
-                <div class="info-value">{{ user.emergency_contact_phone or 'Not Provided' }}</div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-</div>
-
-<!-- Work Info Tab -->
-<div id="work-info" class="tab-content">
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Work Information</h3>
-        </div>
-
-        <div class="info-grid">
-            <div class="info-item">
-                <div class="info-label">Employee ID</div>
-                <div class="info-value">{{ user.login_id }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Role</div>
-                <div class="info-value">{{ user.role.replace('_', ' ').title() }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Department</div>
-                <div class="info-value">{{ user.department or 'Not Assigned' }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Job Position</div>
-                <div class="info-value">{{ user.job_position or 'Not Specified' }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Job Title</div>
-                <div class="info-value">{{ user.job_title or 'Not Specified' }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Employment Type</div>
-                <div class="info-value">{{ user.employment_type or 'Not Specified' }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Contract Type</div>
-                <div class="info-value">{{ user.contract_type or 'Not Specified' }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Date of Joining</div>
-                <div class="info-value">{{ user.date_of_joining.strftime('%B %d, %Y') if user.date_of_joining else 'Not Recorded' }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Work Location</div>
-                <div class="info-value">{{ user.work_location or 'Not Specified' }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Work Address</div>
-                <div class="info-value">{{ user.work_address or 'Not Provided' }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Shift Time</div>
-                <div class="info-value">{{ user.shift_time or 'Not Specified' }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Working Hours</div>
-                <div class="info-value">{{ user.working_hours or 'Not Specified' }}</div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Salary Info Tab -->
-{% if session.role in ['ADMIN', 'PAYROLL_OFFICER'] or session.user_id == user.id %}
-<div id="salary-info" class="tab-content">
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Current Salary Structure</h3>
-        </div>
-
-        <div class="info-grid">
-            <div class="info-item">
-                <div class="info-label">Wage Type</div>
-                <div class="info-value">{{ user.wage_type or 'Not Specified' }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Basic Salary</div>
-                <div class="info-value">₹{{ "{:,.2f}".format(user.basic_salary) if user.basic_salary else 'Not Set' }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Wage Amount</div>
-                <div class="info-value">₹{{ "{:,.2f}".format(user.wage) if user.wage else 'Not Set' }}</div>
-            </div>
-        </div>
-    </div>
-
-    {% if salary_adjustments %}
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Salary History</h3>
-        </div>
-
-        <div class="timeline">
-            {% for adjustment in salary_adjustments %}
-            <div class="timeline-item">
-                <div class="timeline-date">{{ adjustment.adjustment_date.strftime('%B %Y') }}</div>
-                <div class="timeline-content">
-                    <div class="timeline-title">Salary Adjustment</div>
-                    <div class="timeline-desc">
-                        ₹{{ "{:,.2f}".format(adjustment.old_salary) }} → ₹{{ "{:,.2f}".format(adjustment.new_salary) }}
-                        {% if adjustment.reason %}
-                        <br>{{ adjustment.reason }}
-                        {% endif %}
-                    </div>
+    <div class="profile-content">
+        <!-- Email Section -->
+        <div class="profile-section">
+            <h3>Email</h3>
+            <div class="email-container">
+                <div class="info-row">
+                    <label>Email Address:</label>
+                    <span>{{ user.email }}</span>
                 </div>
             </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
-</div>
-{% endif %}
-
-<!-- Badges Tab -->
-<div id="badges" class="tab-content">
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Badges & Awards</h3>
         </div>
 
-        {% if badges %}
-        <div class="badge-grid">
-            {% for badge in badges %}
-            <div class="badge-card">
-                <div class="badge-icon">🏆</div>
-                <div class="badge-name">{{ badge.badge_name }}</div>
-                <div class="badge-date">{{ badge.awarded_date.strftime('%B %Y') if badge.awarded_date else 'Date Not Recorded' }}</div>
-                {% if badge.badge_description %}
-                <p style="font-size: 12px; color: var(--gray); margin-top: 8px;">{{ badge.badge_description }}</p>
-                {% endif %}
+        <!-- Change Password Section (HOD/COUNSELOR only) -->
+        {% if user.role in ['HOD', 'COUNSELOR'] %}
+        <div class="profile-section">
+            <h3>Change Password</h3>
+            <div class="password-container">
+                <div class="form-group">
+                    <label class="form-label">Old Password</label>
+                    <input type="password" id="oldPassword" class="form-control" placeholder="Enter current password">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">New Password</label>
+                    <input type="password" id="newPassword" class="form-control" placeholder="Enter new password">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Confirm Password</label>
+                    <input type="password" id="confirmPassword" class="form-control" placeholder="Confirm new password">
+                </div>
+
+                <button class="btn btn-primary" onclick="changePassword()">
+                    Change Password
+                </button>
             </div>
-            {% endfor %}
         </div>
-        {% else %}
-        <p style="text-align: center; color: var(--gray); padding: 40px;">No badges or awards yet</p>
         {% endif %}
+
+        <!-- Achievement Section -->
+        <div class="profile-section">
+            <h3>Achievements</h3>
+            
+            <!-- Add Achievement Form -->
+            <div class="achievement-form">
+                <h4>Add New Achievement</h4>
+                
+                <div class="form-group">
+                    <label class="form-label">Achievement Title</label>
+                    <input type="text" id="achievementTitle" class="form-control" placeholder="e.g., AWS Certification, Project Award">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea id="achievementDesc" class="form-control" placeholder="Describe your achievement..." rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Upload PDF (Minimum 5 MB)</label>
+                    <input type="file" id="achievementFile" class="form-control" accept=".pdf" onchange="checkFileSize()">
+                    <small class="file-info">File size: <span id="fileSize">0</span> MB | Max: 50 MB | Format: PDF only</small>
+                </div>
+
+                <button class="btn btn-primary" onclick="uploadAchievement()">
+                    Add Achievement
+                </button>
+            </div>
+
+            <!-- Achievements List -->
+            <div class="achievements-list" id="achievementsList">
+                <p class="no-achievements">No achievements added yet</p>
+            </div>
+        </div>
     </div>
 </div>
 
-<!-- Certifications Tab -->
-<div id="certifications" class="tab-content">
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Certifications</h3>
-        </div>
+<style>
+.profile-container { max-width: 800px; margin: 0 auto; padding: 20px; }
+.profile-header { margin-bottom: 30px; border-bottom: 2px solid #f0f0f0; padding-bottom: 20px; }
+.header-section { display: flex; justify-content: space-between; align-items: center; }
+.header-section h1 { margin: 0; font-size: 28px; }
+.back-button { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: #f5f5f5; border-radius: 6px; text-decoration: none; color: #333; cursor: pointer; transition: background 0.3s; }
+.back-button:hover { background: #e0e0e0; }
+.profile-content { display: grid; gap: 20px; }
+.profile-section { background: #fafafa; padding: 20px; border-radius: 8px; border: 1px solid #e0e0e0; }
+.profile-section h3 { margin-top: 0; margin-bottom: 16px; font-size: 18px; }
+.profile-section p { margin: 0 0 16px 0; color: #666; font-size: 14px; }
+.email-container { background: white; padding: 15px; border-radius: 6px; }
+.password-container { background: white; padding: 15px; border-radius: 6px; }
+.achievement-form { background: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #e0e0e0; }
+.achievement-form h4 { margin: 0 0 16px 0; font-size: 16px; color: #333; }
+.achievements-list { background: white; padding: 15px; border-radius: 6px; }
+.no-achievements { text-align: center; color: #999; margin: 20px 0; }
+.achievement-card { background: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 6px; padding: 15px; margin-bottom: 12px; }
+.achievement-card h5 { margin: 0 0 8px 0; font-size: 16px; color: #333; display: flex; justify-content: space-between; align-items: center; }
+.achievement-card .desc { color: #666; font-size: 13px; margin-bottom: 8px; line-height: 1.4; }
+.achievement-card .file-link { display: inline-block; padding: 6px 12px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 12px; margin-right: 8px; }
+.achievement-card .file-link:hover { background: #5568d3; }
+.achievement-card .delete-btn { display: inline-block; padding: 6px 12px; background: #ff6b6b; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+.achievement-card .delete-btn:hover { background: #ee5a52; }
+.info-row { display: flex; justify-content: space-between; padding: 10px 0; }
+.info-row label { font-weight: 500; color: #666; }
+.info-row span { color: #333; word-break: break-all; }
+.form-group { margin-bottom: 16px; }
+.form-label { display: block; margin-bottom: 6px; font-weight: 500; color: #333; font-size: 14px; }
+.form-control { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; box-sizing: border-box; font-family: inherit; }
+.form-control:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+textarea.form-control { resize: vertical; }
+.file-info { display: block; margin-top: 4px; color: #999; font-size: 12px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 14px; transition: all 0.3s; }
+.btn-primary { background: #667eea; color: white; }
+.btn-primary:hover { background: #5568d3; }
+.btn-secondary { background: #f0f0f0; color: #333; border: 1px solid #ddd; }
+.btn-secondary:hover { background: #e8e8e8; }
 
-        {% if certifications %}
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Certification</th>
-                    <th>Issuing Organization</th>
-                    <th>Issue Date</th>
-                    <th>Expiry Date</th>
-                    <th>Credential ID</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for cert in certifications %}
-                <tr>
-                    <td>{{ cert.certification_name }}</td>
-                    <td>{{ cert.issuing_organization }}</td>
-                    <td>{{ cert.issue_date.strftime('%b %Y') if cert.issue_date else '-' }}</td>
-                    <td>{{ cert.expiration_date.strftime('%b %Y') if cert.expiration_date else 'Lifetime' }}</td>
-                    <td>{{ cert.credential_id or '-' }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <p style="text-align: center; color: var(--gray); padding: 40px;">No certifications recorded</p>
-        {% endif %}
-    </div>
-</div>
-{% endblock %}
+.alert { padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; font-size: 14px; }
+.alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+.alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
 
-{% block extra_js %}
+@media (max-width: 600px) {
+    .profile-container { padding: 15px; }
+    .header-section { flex-direction: column; gap: 15px; align-items: flex-start; }
+}
+</style>
+
 <script>
-    function switchTab(event, tabName) {
-        event.preventDefault();
-        
-        // Hide all tab contents
-        const contents = document.querySelectorAll('.tab-content');
-        contents.forEach(c => c.classList.remove('active'));
-        
-        // Remove active class from all tabs
-        const tabs = document.querySelectorAll('.tab-item');
-        tabs.forEach(t => t.classList.remove('active'));
-        
-        // Show selected tab content
-        document.getElementById(tabName).classList.add('active');
-        
-        // Add active class to clicked tab
-        event.target.classList.add('active');
+function checkFileSize() {
+    const file = document.getElementById('achievementFile').files[0];
+    if (!file) return;
+    
+    const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+    document.getElementById('fileSize').textContent = sizeMB;
+    
+    if (file.type !== 'application/pdf') {
+        alert('Only PDF files are allowed');
+        document.getElementById('achievementFile').value = '';
+        return;
     }
+    
+    const maxSize = 5 * 1024 * 1024; // 5 MB
+    if (file.size > maxSize) {
+        alert('File size cannot exceed 5 MB');
+        document.getElementById('achievementFile').value = '';
+        return;
+    }
+}
+
+function uploadAchievement() {
+    const title = document.getElementById('achievementTitle').value;
+    const desc = document.getElementById('achievementDesc').value;
+    const file = document.getElementById('achievementFile').files[0];
+    
+    if (!title || !desc || !file) {
+        alert('Please fill all fields');
+        return;
+    }
+    
+    const sizeMB = file.size / (1024 * 1024);
+    if (sizeMB > 5) {
+        alert('File size must be at most 5 MB');
+        return;
+    }
+    if (file.type !== 'application/pdf') {
+        alert('Only PDF files are allowed');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('description', desc);
+    formData.append('file', file);
+    
+    fetch('/api/achievements/upload', {
+        method: 'POST',
+        body: formData
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.message) {
+            alert('Achievement added successfully!');
+            document.getElementById('achievementTitle').value = '';
+            document.getElementById('achievementDesc').value = '';
+            document.getElementById('achievementFile').value = '';
+            document.getElementById('fileSize').textContent = '0';
+            loadAchievements();
+        } else {
+            alert('Error: ' + (d.error || 'Upload failed'));
+        }
+    })
+    .catch(e => alert('Error: ' + e));
+}
+
+function loadAchievements() {
+    fetch('/api/achievements/list')
+    .then(r => r.json())
+    .then(data => {
+        const list = document.getElementById('achievementsList');
+        if (!data.achievements || data.achievements.length === 0) {
+            list.innerHTML = '<p class="no-achievements">No achievements added yet</p>';
+            return;
+        }
+        
+        let html = '';
+        data.achievements.forEach(ach => {
+            html += `
+                <div class="achievement-card">
+                    <h5>${ach.title}
+                        <button class="delete-btn" onclick="deleteAchievement(${ach.id})">Delete</button>
+                    </h5>
+                    <p class="desc">${ach.description}</p>
+                    <a href="${ach.file_url}" class="file-link" download>📄 Download PDF</a>
+                    <small style="color: #999;">Added: ${new Date(ach.created_at).toLocaleDateString()}</small>
+                </div>
+            `;
+        });
+        list.innerHTML = html;
+    });
+}
+
+function deleteAchievement(id) {
+    if (!confirm('Delete this achievement?')) return;
+    fetch(`/api/achievements/${id}`, { method: 'DELETE' })
+    .then(r => r.json())
+    .then(d => {
+        if (d.message) {
+            loadAchievements();
+        } else {
+            alert('Error: ' + d.error);
+        }
+    });
+}
+
+// Load on page load
+loadAchievements();
 </script>
+
+
 {% endblock %}
