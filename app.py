@@ -489,8 +489,9 @@ def delete_leave_document(doc_id):
 @app.route('/uploads/leave_documents/<filename>')
 @login_required
 def download_leave_document(filename):
-    """Download a leave document"""
+    """View a leave document inline (no download)"""
     try:
+        # 1. Find the document record to check permissions
         doc = LeaveDocument.query.filter_by(file_url=f'/uploads/leave_documents/{filename}').first()
         
         if not doc:
@@ -499,13 +500,15 @@ def download_leave_document(filename):
         user_id = session.get('user_id')
         user = User.query.get(user_id)
         
+        # 2. Allow access if user is Owner OR (HOD or COUNSELOR)
         if doc.user_id != user_id and user.role not in ['HOD', 'COUNSELOR']:
             return jsonify({'error': 'Unauthorized access'}), 403
-        
+            
+        # 3. Serve the file INLINE (Preview)
         return send_file(
             os.path.join('uploads/leave_documents', filename),
-            as_attachment=True,
-            download_name=doc.file_name
+            mimetype='application/pdf',  # Explicitly tell browser it's a PDF
+            as_attachment=False          # False = Show in browser, True = Download
         )
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -1132,8 +1135,9 @@ def delete_achievement(achievement_id):
 
 @app.route('/uploads/achievements/<filename>')
 @login_required
-def download_achievement(filename):
-    return send_file(os.path.join('uploads/achievements', filename), as_attachment=True)
+def view_achievement(filename):
+    # as_attachment=False allows the PDF to open in the browser
+    return send_file(os.path.join('uploads/achievements', filename), as_attachment=False)
 
 # ======================== ERROR HANDLERS ========================
 

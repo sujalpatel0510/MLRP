@@ -271,6 +271,44 @@
     .hidden-element {
         display: none;
     }
+
+    .btn-view-pdf {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background-color: #e3f2fd;
+        color: #0277bd;
+        padding: 4px 10px;
+        border: 1px solid #b3e5fc;
+        border-radius: 4px;
+        text-decoration: none;
+        font-size: 11px;
+        font-weight: 600;
+        transition: background-color 0.2s;
+    }
+    .btn-view-pdf:hover {
+        background-color: #b3e5fc;
+    }
+
+    .btn-view-pdf {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background-color: #e3f2fd;
+    color: #0277bd;
+    padding: 4px 10px;
+    border: 1px solid #b3e5fc;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: 5px;
+    transition: background-color 0.2s;
+}
+.btn-view-pdf:hover {
+    background-color: #b3e5fc;
+}
+
 </style>
 {% endblock %}
 
@@ -464,10 +502,14 @@
                         </td>
                         <td>{{ leave.reason or 'N/A' }}</td>
                         <td>
-                            {% if leave.documents %}
-                                <a href="{{ leave.documents[0].file_url }}" target="_blank" title="View Document">📎</a>
-                            {% endif %}
-                        </td>
+    {% if leave.documents %}
+        <a href="{{ leave.documents[0].file_url }}" target="_blank" class="btn-view-pdf">
+            👁️ View PDF
+        </a>
+    {% else %}
+        <span style="color: #ccc;">-</span>
+    {% endif %}
+</td>
                         {% if user.role in ['HR_OFFICER', 'ADMIN'] %}
                         <td>
                             {% if leave.status == 'Pending' %}
@@ -546,12 +588,14 @@
                         <td>{{ leave.created_at.strftime('%d %b %Y') }}</td>
                         <td>{{ leave.reason or 'N/A' }}</td>
                         <td>
-                            {% if leave.documents %}
-                                <a href="{{ leave.documents[0].file_url }}" target="_blank" style="color: #208099; font-weight: bold;">View PDF</a>
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
+    {% if leave.documents %}
+        <a href="{{ leave.documents[0].file_url }}" target="_blank" class="btn-view-pdf">
+            👁️ View PDF
+        </a>
+    {% else %}
+        <span style="color: #ccc;">-</span>
+    {% endif %}
+</td>
                         <td>
                             <div class="action-buttons">
                                 <button class="btn-action btn-approve" onclick="handleLeaveAction({{ leave.id }}, 'approve')">

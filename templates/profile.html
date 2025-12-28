@@ -222,8 +222,14 @@ function loadAchievements() {
                         <button class="delete-btn" onclick="deleteAchievement(${ach.id})">Delete</button>
                     </h5>
                     <p class="desc">${ach.description}</p>
-                    <a href="${ach.file_url}" class="file-link" download>📄 Download PDF</a>
-                    <small style="color: #999;">Added: ${new Date(ach.created_at).toLocaleDateString()}</small>
+                    
+                    <a href="${ach.file_url}" target="_blank" class="btn-view-pdf">
+                        👁️ View PDF
+                    </a>
+                    
+                    <small style="color: #999; display:block; margin-top:5px;">
+                        Added: ${new Date(ach.created_at).toLocaleDateString()}
+                    </small>
                 </div>
             `;
         });
