@@ -38,22 +38,24 @@ db = SQLAlchemy(app)
 # ======================== DATABASE MODELS ========================
 
 class User(db.Model):
-    """Minimal User model - Email, Password, and Role only"""
     __tablename__ = 'users'
+    
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
-    role = db.Column(db.String(50), default='STUDENT')  # STUDENT, COUNSELOR, HOD
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    role = db.Column(db.String(50), default='STUDENT')
+    counselor_email = db.Column(db.String(255), nullable=True)
 
     def set_password(self, password):
-        """Store plain text password"""
         self.password = password
 
     def check_password(self, password):
-        """Check plain text password"""
         return self.password == password
+        
+    # Keeps the app from crashing if templates ask for name
+    @property
+    def full_name(self):
+        return self.email
 
 class Attendance(db.Model):
     """Attendance tracking model"""
@@ -194,20 +196,25 @@ def timeoff():
     user = User.query.get(user_id)
     current_year = datetime.now().year
 
-    # Get user's own leaves
+    # 1. Get user's own leaves (History)
     leaves = Leave.query.filter_by(user_id=user_id).order_by(Leave.created_at.desc()).all()
 
-    # Get user's leave balance
+    # 2. Get user's leave balance
     leave_balance = LeaveBalance.query.filter_by(user_id=user_id, year=current_year).all()
 
-    # Different behavior for different roles
+    # 3. Logic for "All Leaves" (History Tab)
     all_leaves = []
-    if user.role in ['HOD', 'COUNSELOR']:
+    if user.role == 'HOD':
         all_leaves = Leave.query.order_by(Leave.created_at.desc()).all()
+    elif user.role == 'COUNSELOR':
+        # FIXED: Explicit join on user_id to avoid AmbiguousForeignKeysError
+        all_leaves = Leave.query.join(User, Leave.user_id == User.id).filter(
+            User.counselor_email == user.email
+        ).order_by(Leave.created_at.desc()).all()
     else:
         all_leaves = [leave for leave in leaves]
 
-    # For Counselor and HOD - get pending approvals
+    # 4. Logic for "Pending Approvals" & Statistics
     pending_leaves = []
     pending_count = 0
     approved_today = 0
@@ -215,27 +222,52 @@ def timeoff():
     today = datetime.now().date()
 
     if user.role in ['COUNSELOR', 'HOD']:
-        pending_leaves = Leave.query.filter_by(status='Pending').order_by(Leave.created_at.desc()).all()
+        if user.role == 'HOD':
+            pending_leaves = Leave.query.filter_by(status='Pending').order_by(Leave.created_at.desc()).all()
+            
+            approved_today = Leave.query.filter(
+                Leave.status == 'Approved', 
+                Leave.updated_at >= today
+            ).count()
+            
+            rejected_today = Leave.query.filter(
+                Leave.status == 'Rejected', 
+                Leave.updated_at >= today
+            ).count()
+
+        elif user.role == 'COUNSELOR':
+            # FIXED: Explicit join on user_id
+            pending_leaves = Leave.query.join(User, Leave.user_id == User.id).filter(
+                Leave.status == 'Pending',
+                User.counselor_email == user.email
+            ).order_by(Leave.created_at.desc()).all()
+
+            # FIXED: Explicit join on user_id
+            approved_today = Leave.query.join(User, Leave.user_id == User.id).filter(
+                Leave.status == 'Approved',
+                Leave.updated_at >= today,
+                User.counselor_email == user.email
+            ).count()
+
+            # FIXED: Explicit join on user_id
+            rejected_today = Leave.query.join(User, Leave.user_id == User.id).filter(
+                Leave.status == 'Rejected',
+                Leave.updated_at >= today,
+                User.counselor_email == user.email
+            ).count()
+
         pending_count = len(pending_leaves)
-        approved_today = Leave.query.filter(
-            Leave.status == 'Approved',
-            Leave.updated_at >= today
-        ).count()
-        rejected_today = Leave.query.filter(
-            Leave.status == 'Rejected',
-            Leave.updated_at >= today
-        ).count()
 
     return render_template('timeoff.html',
-                          user=user,
-                          leaves=leaves,
-                          leave_balance=leave_balance,
-                          current_year=current_year,
-                          all_leaves=all_leaves,
-                          pending_leaves=pending_leaves,
-                          pending_count=pending_count,
-                          approved_today=approved_today,
-                          rejected_today=rejected_today)
+                           user=user,
+                           leaves=leaves,
+                           leave_balance=leave_balance,
+                           current_year=current_year,
+                           all_leaves=all_leaves,
+                           pending_leaves=pending_leaves,
+                           pending_count=pending_count,
+                           approved_today=approved_today,
+                           rejected_today=rejected_today)
 
 @app.route('/api/leaves/apply', methods=['POST'])
 @login_required
@@ -1148,6 +1180,34 @@ def not_found(error):
 @app.errorhandler(500)
 def internal_error(error):
     return render_template('500.html'), 500
+
+# ======================== ASSIGNMENT ROUTE ========================
+
+@app.route('/api/assign_counselor', methods=['POST'])
+@login_required
+def assign_counselor_to_student():
+    # Only HOD can assign
+    user_id = session.get('user_id')
+    curr_user = User.query.get(user_id)
+    
+    if curr_user.role != 'HOD':
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    data = request.get_json()
+    student_email = data.get('student_email')
+    counselor_email = data.get('counselor_email')
+
+    student = User.query.filter_by(email=student_email).first()
+    counselor = User.query.filter_by(email=counselor_email).first()
+
+    if not student or not counselor:
+        return jsonify({'error': 'User not found'}), 404
+        
+    # Simply save the email string
+    student.counselor_email = counselor.email 
+    db.session.commit()
+
+    return jsonify({'message': f'Assigned {student.full_name} to {counselor.full_name}'})
 
 # ======================== DATABASE INITIALIZATION ========================
 
