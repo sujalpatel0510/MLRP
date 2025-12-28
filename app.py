@@ -14,6 +14,8 @@ from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
 from reportlab.lib import colors
 from io import BytesIO
+from werkzeug.utils import secure_filename
+
 # import qrcode
 
 load_dotenv()
@@ -93,6 +95,23 @@ class LeaveBalance(db.Model):
     year = db.Column(db.Integer)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     __table_args__ = (db.UniqueConstraint('user_id', 'leave_type', 'year', name='uq_user_leave_year'),)
+
+class LeaveDocument(db.Model):
+    """Documents attached to leave requests (Medical reports, certificates, etc.)"""
+    __tablename__ = 'leave_documents'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    leave_id = db.Column(db.Integer, db.ForeignKey('leaves.id'), nullable=False)
+    leave = db.relationship('Leave', backref='documents')
+    
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    file_url = db.Column(db.String(500), nullable=False)
+    file_size = db.Column(db.Integer)
+    file_name = db.Column(db.String(255), nullable=False)
+    document_type = db.Column(db.String(100))
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 class Achievement(db.Model):
     __tablename__ = 'achievements'
@@ -221,27 +240,29 @@ def timeoff():
 @app.route('/api/leaves/apply', methods=['POST'])
 @login_required
 def apply_leave():
-    """Apply for leave"""
+    """Apply for leave with optional document upload"""
     try:
         user_id = session.get('user_id')
-        data = request.get_json()
-        start_date = datetime.strptime(data.get('start_date'), '%Y-%m-%d').date()
-        end_date = datetime.strptime(data.get('end_date'), '%Y-%m-%d').date()
-        leave_type = data.get('leave_type')
-        reason = data.get('reason')
+        
+        # Handle form data with file
+        start_date = datetime.strptime(request.form.get('start_date'), '%Y-%m-%d').date()
+        end_date = datetime.strptime(request.form.get('end_date'), '%Y-%m-%d').date()
+        leave_type = request.form.get('leave_type')
+        reason = request.form.get('reason')
+        
         num_days = (end_date - start_date).days + 1
         current_year = datetime.now().year
-
+        
         # Find Counselor (first available)
         counselor = User.query.filter_by(role='COUNSELOR').first()
-
+        
         # Check or create leave balance
         balance = LeaveBalance.query.filter_by(
             user_id=user_id,
             leave_type=leave_type,
             year=current_year
         ).first()
-
+        
         if not balance:
             default_days = {'Annual': 20, 'Sick': 10, 'Casual': 5}
             balance = LeaveBalance(
@@ -254,12 +275,12 @@ def apply_leave():
             )
             db.session.add(balance)
             db.session.commit()
-
+        
         if balance.remaining_days < num_days:
             return jsonify(
                 error=f'Insufficient leave balance. Available: {balance.remaining_days} days, Requested: {num_days} days'
             ), 400
-
+        
         # Create leave request
         leave = Leave(
             user_id=user_id,
@@ -271,17 +292,224 @@ def apply_leave():
             status='Pending',
             approved_by=counselor.id if counselor else None
         )
+        
         db.session.add(leave)
+        db.session.flush()  # Get leave ID without committing
+        
+        # Handle document upload if provided
+        if 'document' in request.files:
+            file = request.files['document']
+            document_type = request.form.get('document_type', 'Supporting Document')
+            
+            if file and file.filename:
+                # Validate PDF format
+                if not file.filename.lower().endswith('.pdf'):
+                    db.session.rollback()
+                    return jsonify({'error': 'Only PDF files are allowed'}), 400
+                
+                # Check file size (5 MB max)
+                file.seek(0, 2)
+                file_size = file.tell()
+                file.seek(0)
+                
+                if file_size > 5 * 1024 * 1024:
+                    db.session.rollback()
+                    return jsonify({'error': 'File size exceeds 5 MB limit'}), 400
+                
+                # Create uploads directory
+                os.makedirs('uploads/leave_documents', exist_ok=True)
+                
+                # Save file with secure name
+                import secrets
+                safe_name = f"leave_{leave.id}_{user_id}_{secrets.token_hex(8)}.pdf"
+                path = os.path.join('uploads/leave_documents', safe_name)
+                file.save(path)
+                
+                # Create LeaveDocument record
+                doc = LeaveDocument(
+                    leave_id=leave.id,
+                    user_id=user_id,
+                    file_url=f'/uploads/leave_documents/{safe_name}',
+                    file_size=file_size,
+                    file_name=secure_filename(file.filename),
+                    document_type=document_type
+                )
+                db.session.add(doc)
+        
         db.session.commit()
-
+        
         return jsonify(
             message='Leave request submitted successfully',
             leave_id=leave.id
         ), 201
-
+        
     except Exception as e:
         db.session.rollback()
         return jsonify(error=str(e)), 500
+
+
+@app.route('/api/leaves/<int:leave_id>/documents', methods=['GET'])
+@login_required
+def get_leave_documents(leave_id):
+    """Get all documents for a specific leave request"""
+    try:
+        user_id = session.get('user_id')
+        leave = Leave.query.get(leave_id)
+        
+        if not leave:
+            return jsonify({'error': 'Leave request not found'}), 404
+        
+        # Check authorization
+        user = User.query.get(user_id)
+        if leave.user_id != user_id and user.role not in ['HOD', 'COUNSELOR']:
+            return jsonify({'error': 'Unauthorized access'}), 403
+        
+        documents = LeaveDocument.query.filter_by(leave_id=leave_id).all()
+        
+        return jsonify({
+            'documents': [{
+                'id': doc.id,
+                'leave_id': doc.leave_id,
+                'file_name': doc.file_name,
+                'file_url': doc.file_url,
+                'file_size': doc.file_size,
+                'document_type': doc.document_type,
+                'created_at': doc.created_at.isoformat()
+            } for doc in documents]
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/leaves/<int:leave_id>/documents/upload', methods=['POST'])
+@login_required
+def upload_leave_document(leave_id):
+    """Upload a document to an existing leave request"""
+    try:
+        user_id = session.get('user_id')
+        leave = Leave.query.get(leave_id)
+        
+        if not leave:
+            return jsonify({'error': 'Leave request not found'}), 404
+        
+        if leave.user_id != user_id:
+            return jsonify({'error': 'Unauthorized access'}), 403
+        
+        if leave.status != 'Pending':
+            return jsonify({'error': 'Can only upload documents for pending leave requests'}), 400
+        
+        file = request.files.get('document')
+        document_type = request.form.get('document_type', 'Supporting Document')
+        
+        if not file:
+            return jsonify({'error': 'No file provided'}), 400
+        
+        if not file.filename.lower().endswith('.pdf'):
+            return jsonify({'error': 'Only PDF files are allowed'}), 400
+        
+        file.seek(0, 2)
+        file_size = file.tell()
+        file.seek(0)
+        
+        if file_size > 5 * 1024 * 1024:
+            return jsonify({'error': 'File size exceeds 5 MB limit'}), 400
+        
+        os.makedirs('uploads/leave_documents', exist_ok=True)
+        
+        import secrets
+        safe_name = f"leave_{leave_id}_{user_id}_{secrets.token_hex(8)}.pdf"
+        path = os.path.join('uploads/leave_documents', safe_name)
+        file.save(path)
+        
+        doc = LeaveDocument(
+            leave_id=leave_id,
+            user_id=user_id,
+            file_url=f'/uploads/leave_documents/{safe_name}',
+            file_size=file_size,
+            file_name=secure_filename(file.filename),
+            document_type=document_type
+        )
+        db.session.add(doc)
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Document uploaded successfully',
+            'document': {
+                'id': doc.id,
+                'file_name': doc.file_name,
+                'file_url': doc.file_url,
+                'file_size': doc.file_size,
+                'document_type': doc.document_type,
+                'created_at': doc.created_at.isoformat()
+            }
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/documents/<int:doc_id>', methods=['DELETE'])
+@login_required
+def delete_leave_document(doc_id):
+    """Delete a document from leave request"""
+    try:
+        user_id = session.get('user_id')
+        doc = LeaveDocument.query.get(doc_id)
+        
+        if not doc:
+            return jsonify({'error': 'Document not found'}), 404
+        
+        if doc.user_id != user_id:
+            return jsonify({'error': 'Unauthorized access'}), 403
+        
+        leave = Leave.query.get(doc.leave_id)
+        if leave.status != 'Pending':
+            return jsonify({'error': 'Cannot delete documents from processed leave requests'}), 400
+        
+        try:
+            if 'uploads/leave_documents' in doc.file_url:
+                file_path = doc.file_url.replace('/uploads/leave_documents/', 'uploads/leave_documents/')
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+        except:
+            pass
+        
+        db.session.delete(doc)
+        db.session.commit()
+        
+        return jsonify({'message': 'Document deleted successfully'}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/uploads/leave_documents/<filename>')
+@login_required
+def download_leave_document(filename):
+    """Download a leave document"""
+    try:
+        doc = LeaveDocument.query.filter_by(file_url=f'/uploads/leave_documents/{filename}').first()
+        
+        if not doc:
+            return jsonify({'error': 'Document not found'}), 404
+        
+        user_id = session.get('user_id')
+        user = User.query.get(user_id)
+        
+        if doc.user_id != user_id and user.role not in ['HOD', 'COUNSELOR']:
+            return jsonify({'error': 'Unauthorized access'}), 403
+        
+        return send_file(
+            os.path.join('uploads/leave_documents', filename),
+            as_attachment=True,
+            download_name=doc.file_name
+        )
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/leaves/approve/<int:leave_id>', methods=['PUT'])
 @login_required

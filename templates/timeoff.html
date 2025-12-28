@@ -276,11 +276,9 @@
 
 {% block content %}
 <div class="container">
-    <!-- Alert Messages -->
     <div id="successAlert" class="alert alert-success"></div>
     <div id="errorAlert" class="alert alert-error"></div>
 
-    <!-- Tabs -->
     <div class="tabs">
         <button class="tab active" onclick="switchTab('myLeaves')">My Leaves</button>
         {% if user.role in ['COUNSELOR', 'HOD'] %}
@@ -289,17 +287,15 @@
         {% endif %}
     </div>
 
-    <!-- My Leaves Tab -->
     <div id="myLeaves" class="tab-content active">
 
-        <!-- Leave Application Form -->
         <div class="form-container">
             <h3>Apply for Leave</h3>
-            <form id="leaveForm">
+            <form id="leaveForm" enctype="multipart/form-data">
                 <div class="form-row">
                     <div class="form-group">
                         <label for="leaveType" class="required">Leave Type</label>
-                        <select id="leaveType" name="leave_type" required onchange="updateMedicalRequirement()">
+                        <select id="leaveType" name="leave_type" required>
                             <option value="">Select Leave Type</option>
                             <option value="Annual">Annual Leave</option>
                             <option value="Sick">Sick Leave</option>
@@ -330,45 +326,19 @@
                     <textarea id="reason" name="reason" rows="4" placeholder="Please provide a reason for your leave request..." required></textarea>
                 </div>
 
-                <!-- Medical Certificate Upload for Sick Leave (Inline) -->
-                <div id="medicalUploadSection" class="hidden-element" style="border: 1px solid #ddd; padding: 15px; border-radius: 4px; background: #f9f9f9; margin-bottom: 15px;">
-                    <h4 style="color: #208099; margin-top: 0;">🏥 Medical Certificate Required</h4>
-                    <p style="font-size: 13px; color: #666; margin-bottom: 10px;">
-                        Please upload a valid medical certificate for your sick leave request.
-                    </p>
-                    
-                    <div style="margin-bottom: 10px;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333; font-size: 13px;">Medical Certificate (PDF) <span style="color: red;">*</span></label>
-                        <input type="file" id="medicalFileSickLeave" accept=".pdf" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; box-sizing: border-box;">
-                    </div>
-                    
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333; font-size: 13px;">Doctor's Name / Clinic Name <span style="color: red;">*</span></label>
-                        <input type="text" id="medicalDocNameSickLeave" placeholder="Enter doctor's name or clinic name" maxlength="200" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; box-sizing: border-box;">
-                    </div>
-
-                    <button type="button" onclick="uploadSickLeaveInline()" style="background: #208099; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600;">📤 Upload Certificate</button>
-                    
-                    <div id="inlineUploadStatus" style="display: none; margin-top: 10px; padding: 10px; border-radius: 4px; font-size: 12px; text-align: center;">
-                        <span id="inlineStatusIcon" style="margin-right: 8px;"></span>
-                        <span id="inlineStatusText"></span>
-                    </div>
-
-                    <div id="inlineRecordsList" style="margin-top: 10px; font-size: 12px; color: #666;">
-                        <p style="color: #999;">Loading records...</p>
-                    </div>
-                </div>
-
-                <!-- Medical Certificate Warning for Sick Leave -->
-                <div id="medicalWarning" class="alert alert-error hidden-element">
-                    ⚠️ <strong>Medical certificate is required for Sick Leave.</strong> Please upload a valid medical document above before submitting your leave request.
+                <div class="form-group" style="background: #f8f9fa; padding: 15px; border: 1px solid #e9ecef; border-radius: 4px;">
+                    <label for="leaveDocument">Attach Document (Optional)</label>
+                    <input type="file" id="leaveDocument" name="document" accept=".pdf">
+                    <small style="color: #666; display: block; margin-top: 5px;">
+                        Supported format: <strong>PDF only</strong>. Maximum file size: <strong>5 MB</strong>.<br>
+                        <em>Attach medical reports, travel tickets, or other relevant documents.</em>
+                    </small>
                 </div>
 
                 <button type="submit" class="btn-submit">Submit Request</button>
             </form>
         </div>
 
-        <!-- Leave Balance Section -->
         {% if leave_balance %}
         <div class="form-container">
             <h3>Leave Balance - {{ current_year }}</h3>
@@ -395,7 +365,6 @@
         </div>
         {% endif %}
 
-        <!-- Your Leave Requests -->
         <div class="form-container">
             <h3>Your Leave Requests</h3>
             {% if leaves %}
@@ -409,7 +378,7 @@
                         <th>Status</th>
                         <th>Approved By</th>
                         <th>Reason</th>
-                    </tr>
+                        <th>Document</th> </tr>
                 </thead>
                 <tbody>
                     {% for leave in leaves %}
@@ -425,6 +394,15 @@
                         </td>
                         <td>{% if leave.approver %}{{ leave.approver.full_name }}{% else %}Pending{% endif %}</td>
                         <td>{{ leave.reason or 'N/A' }}</td>
+                        <td>
+                             {% if leave.documents %}
+                                {% for doc in leave.documents %}
+                                    <a href="{{ doc.file_url }}" target="_blank" style="color:#208099; font-size: 12px;">View PDF</a>
+                                {% endfor %}
+                            {% else %}
+                                <span style="color:#999; font-size:12px;">-</span>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -437,12 +415,10 @@
         </div>
     </div>
 
-    <!-- All Leave Requests Tab -->
     <div id="allRequests" class="tab-content">
         <div class="form-container">
             <h3>All Leave Requests</h3>
             
-            <!-- Filter Section -->
             <div class="filter-section">
                 <select id="statusFilter" class="filter-input" onchange="filterRequests()">
                     <option value="">All Status</option>
@@ -464,6 +440,7 @@
                         <th>Days</th>
                         <th>Status</th>
                         <th>Reason</th>
+                        <th>Doc</th>
                         {% if user.role in ['HR_OFFICER', 'ADMIN'] %}
                         <th>Actions</th>
                         {% endif %}
@@ -486,6 +463,11 @@
                             </span>
                         </td>
                         <td>{{ leave.reason or 'N/A' }}</td>
+                        <td>
+                            {% if leave.documents %}
+                                <a href="{{ leave.documents[0].file_url }}" target="_blank" title="View Document">📎</a>
+                            {% endif %}
+                        </td>
                         {% if user.role in ['HR_OFFICER', 'ADMIN'] %}
                         <td>
                             {% if leave.status == 'Pending' %}
@@ -514,11 +496,9 @@
         </div>
     </div>
 
-    <!-- Pending Approvals Tab (HOD/COUNSELOR) -->
     {% if user.role in ['COUNSELOR', 'HOD'] %}
     <div id="pendingApprovals" class="tab-content">
         <div class="form-container">
-            <!-- Statistics -->
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-value">{{ pending_count }}</div>
@@ -545,6 +525,7 @@
                         <th>Days</th>
                         <th>Applied On</th>
                         <th>Reason</th>
+                        <th>Doc</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -564,6 +545,13 @@
                         <td><strong>{{ leave.number_of_days }}</strong></td>
                         <td>{{ leave.created_at.strftime('%d %b %Y') }}</td>
                         <td>{{ leave.reason or 'N/A' }}</td>
+                        <td>
+                            {% if leave.documents %}
+                                <a href="{{ leave.documents[0].file_url }}" target="_blank" style="color: #208099; font-weight: bold;">View PDF</a>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
                         <td>
                             <div class="action-buttons">
                                 <button class="btn-action btn-approve" onclick="handleLeaveAction({{ leave.id }}, 'approve')">
@@ -623,30 +611,41 @@ document.addEventListener('DOMContentLoaded', function() {
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
 
-        // Check if medical certificate is required and uploaded
         const leaveType = document.getElementById('leaveType').value;
-        if (leaveType === 'Sick') {
-            const hasCertificate = await checkMedicalCertificateExists();
-            if (!hasCertificate) {
-                showAlert(errorAlert, '❌ Medical certificate is required for Sick Leave. Please upload one in the form above.', 'error');
+        const fileInput = document.getElementById('leaveDocument');
+        const file = fileInput.files[0];
+
+        // 1. Validation for File (Client Side)
+        if (file) {
+            // Check File Type
+            if (file.type !== 'application/pdf') {
+                showAlert(errorAlert, '❌ Only PDF files are allowed.', 'error');
+                return;
+            }
+            // Check File Size (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                showAlert(errorAlert, '❌ File size must be less than 5 MB.', 'error');
                 return;
             }
         }
 
-        const formData = {
-            leave_type: leaveType,
-            start_date: startDateInput.value,
-            end_date: endDateInput.value,
-            reason: document.getElementById('reason').value
-        };
+        // 2. Use FormData instead of JSON to support file upload
+        const formData = new FormData();
+        formData.append('leave_type', leaveType);
+        formData.append('start_date', startDateInput.value);
+        formData.append('end_date', endDateInput.value);
+        formData.append('reason', document.getElementById('reason').value);
+        
+        if (file) {
+            formData.append('document', file);
+            formData.append('document_type', 'Supporting Document'); // Optional meta-data
+        }
 
         try {
+            // No Content-Type header needed; browser sets it to multipart/form-data with boundary automatically
             const response = await fetch('/api/leaves/apply', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
+                body: formData 
             });
 
             const data = await response.json();
@@ -678,22 +677,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     }
 });
-
-// Update medical requirement warning
-function updateMedicalRequirement() {
-    const leaveType = document.getElementById('leaveType').value;
-    const warning = document.getElementById('medicalWarning');
-    const uploadSection = document.getElementById('medicalUploadSection');
-    
-    if (leaveType === 'Sick') {
-        warning.classList.remove('hidden-element');
-        uploadSection.classList.remove('hidden-element');
-        loadInlineRecords();
-    } else {
-        warning.classList.add('hidden-element');
-        uploadSection.classList.add('hidden-element');
-    }
-}
 
 // Tab switching
 function switchTab(tabName) {
@@ -766,151 +749,6 @@ async function handleLeaveAction(leaveId, action) {
         const errorAlert = document.getElementById('errorAlert');
         errorAlert.textContent = '❌ An error occurred. Please try again.';
         errorAlert.className = 'alert alert-error show';
-    }
-}
-
-// Inline Medical Upload Function
-function uploadSickLeaveInline() {
-    const fileInput = document.getElementById('medicalFileSickLeave');
-    const docNameInput = document.getElementById('medicalDocNameSickLeave');
-    const file = fileInput.files[0];
-    
-    if (!file) {
-        alert('Please select a PDF file');
-        return;
-    }
-    
-    if (file.type !== 'application/pdf') {
-        alert('Only PDF files are allowed');
-        return;
-    }
-    
-    if (file.size > 5 * 1024 * 1024) {
-        alert('File size cannot exceed 5 MB');
-        return;
-    }
-    
-    if (!docNameInput.value.trim()) {
-        alert('Please enter doctor name or clinic name');
-        return;
-    }
-    
-    showInlineUploadStatus('Uploading medical certificate...');
-    
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('reason', docNameInput.value);
-    formData.append('leave_type', 'Sick');
-    
-    fetch('/api/sick-leave/upload-certificate', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.message) {
-            showInlineUploadStatus('Certificate uploaded successfully!', true);
-            fileInput.value = '';
-            docNameInput.value = '';
-            loadInlineRecords();
-        } else {
-            showInlineUploadStatus('Error: ' + data.error, false);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showInlineUploadStatus('Upload failed: ' + error.message, false);
-    });
-}
-
-function loadInlineRecords() {
-    fetch('/api/sick-leave/medical-records', {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        const recordsList = document.getElementById('inlineRecordsList');
-        
-        if (data.records && data.records.length > 0) {
-            recordsList.innerHTML = '<strong style="color: #208099;">📋 Uploaded Records:</strong><br/>' + 
-                data.records.map(record => `
-                <div class="medical-record-item">
-                    <div>
-                        <strong>${record.reason}</strong> • ${new Date(record.created_at).toLocaleDateString()}
-                    </div>
-                    <div>
-                        <a href="${record.file_url}" target="_blank">View</a> | 
-                        <span class="delete-record" onclick="deleteInlineRecord(${record.id})">Delete</span>
-                    </div>
-                </div>
-            `).join('');
-        } else {
-            recordsList.innerHTML = '<p style="color: #999; font-size: 11px;">No medical records uploaded yet</p>';
-        }
-    })
-    .catch(error => {
-        console.error('Error loading records:', error);
-    });
-}
-
-function deleteInlineRecord(recordId) {
-    if (confirm('Delete this medical record?')) {
-        fetch(`/api/sick-leave/medical-records/${recordId}`, {
-            method: 'DELETE'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.message) {
-                loadInlineRecords();
-            } else {
-                alert('Error: ' + data.error);
-            }
-        })
-        .catch(error => console.error('Error:', error));
-    }
-}
-
-function showInlineUploadStatus(message, isSuccess = null) {
-    const statusDiv = document.getElementById('inlineUploadStatus');
-    const statusText = document.getElementById('inlineStatusText');
-    const statusIcon = document.getElementById('inlineStatusIcon');
-    
-    statusDiv.style.display = 'block';
-    statusText.textContent = message;
-    
-    if (isSuccess === true) {
-        statusIcon.textContent = '✅';
-        statusDiv.style.background = '#e7f9f1';
-        statusDiv.style.color = '#27a76a';
-        statusDiv.style.borderLeft = '3px solid #27a76a';
-        
-        setTimeout(() => {
-            statusDiv.style.display = 'none';
-        }, 3000);
-    } else if (isSuccess === false) {
-        statusIcon.textContent = '❌';
-        statusDiv.style.background = '#ffe7e7';
-        statusDiv.style.color = '#e74c3c';
-        statusDiv.style.borderLeft = '3px solid #e74c3c';
-    } else {
-        statusIcon.textContent = '⏳';
-        statusDiv.style.background = '#e7f3f8';
-        statusDiv.style.color = '#134252';
-        statusDiv.style.borderLeft = '3px solid #208099';
-    }
-}
-
-async function checkMedicalCertificateExists() {
-    try {
-        const response = await fetch('/api/sick-leave/medical-records');
-        const data = await response.json();
-        return data.records && data.records.length > 0;
-    } catch (error) {
-        console.error('Error checking certificate:', error);
-        return false;
     }
 }
 </script>
