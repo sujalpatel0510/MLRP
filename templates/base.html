@@ -430,6 +430,7 @@
                 </li>
                 
                 </li>
+                {% if user and user.role in ['HOD', 'COUNSELOR'] %}
                 <li class="nav-item">
                     <a href="{{ url_for('reports') }}" class="nav-link {% block nav_reports %}{% endblock %}">
                         <span>
@@ -440,6 +441,7 @@
                         Reports
                     </a>
                 </li>
+                {% endif %}
                
                 </li>
             </ul>
