@@ -2,20 +2,31 @@
 
 {% block content %}
 <div class="profile-container">
-    <!-- Profile Header -->
     <div class="profile-header">
         <div class="header-section">
-            <h1>My Profile</h1>
-            <a href="{{ url_for('dashboard') }}" class="back-button">
-                <i class="fas fa-arrow-left"></i> Back
-            </a>
+            <h1>
+                {% if view_only %}
+                    Student Profile: {{ user.full_name }}
+                {% else %}
+                    My Profile
+                {% endif %}
+            </h1>
+            
+            {% if view_only %}
+                <a href="{{ url_for('students_list') }}" class="back-button">
+                    <i class="fas fa-arrow-left"></i> Back to List
+                </a>
+            {% else %}
+                <a href="{{ url_for('dashboard') }}" class="back-button">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+            {% endif %}
         </div>
     </div>
 
     <div class="profile-content">
-        <!-- Email Section -->
         <div class="profile-section">
-            <h3>Email</h3>
+            <h3>Contact Info</h3>
             <div class="email-container">
                 <div class="info-row">
                     <label>Email Address:</label>
@@ -23,25 +34,34 @@
                 </div>
             </div>
         </div>
-
-        <!-- Change Password Section (HOD/COUNSELOR only) -->
-        {% if user.role in ['HOD', 'COUNSELOR'] %}
+        
+        {% if not view_only %}
         <div class="profile-section">
             <h3>Change Password</h3>
             <div class="password-container">
+                
                 <div class="form-group">
                     <label class="form-label">Old Password</label>
-                    <input type="password" id="oldPassword" class="form-control" placeholder="Enter current password">
+                    <div class="password-wrapper">
+                        <input type="password" id="oldPassword" class="form-control" placeholder="Enter current password">
+                        <i class="fas fa-eye toggle-password" onclick="togglePassword('oldPassword', this)"></i>
+                    </div>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">New Password</label>
-                    <input type="password" id="newPassword" class="form-control" placeholder="Enter new password">
+                    <div class="password-wrapper">
+                        <input type="password" id="newPassword" class="form-control" placeholder="Enter new password">
+                        <i class="fas fa-eye toggle-password" onclick="togglePassword('newPassword', this)"></i>
+                    </div>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Confirm Password</label>
-                    <input type="password" id="confirmPassword" class="form-control" placeholder="Confirm new password">
+                    <div class="password-wrapper">
+                        <input type="password" id="confirmPassword" class="form-control" placeholder="Confirm new password">
+                        <i class="fas fa-eye toggle-password" onclick="togglePassword('confirmPassword', this)"></i>
+                    </div>
                 </div>
 
                 <button class="btn btn-primary" onclick="changePassword()">
@@ -51,11 +71,10 @@
         </div>
         {% endif %}
 
-        <!-- Achievement Section -->
         <div class="profile-section">
             <h3>Achievements</h3>
             
-            <!-- Add Achievement Form -->
+            {% if not view_only %}
             <div class="achievement-form">
                 <h4>Add New Achievement</h4>
                 
@@ -79,16 +98,17 @@
                     Add Achievement
                 </button>
             </div>
+            {% endif %}
 
-            <!-- Achievements List -->
             <div class="achievements-list" id="achievementsList">
-                <p class="no-achievements">No achievements added yet</p>
+                <p class="no-achievements">Loading...</p>
             </div>
         </div>
     </div>
 </div>
 
 <style>
+/* Existing Styles */
 .profile-container { max-width: 800px; margin: 0 auto; padding: 20px; }
 .profile-header { margin-bottom: 30px; border-bottom: 2px solid #f0f0f0; padding-bottom: 20px; }
 .header-section { display: flex; justify-content: space-between; align-items: center; }
@@ -126,10 +146,15 @@ textarea.form-control { resize: vertical; }
 .btn-primary:hover { background: #5568d3; }
 .btn-secondary { background: #f0f0f0; color: #333; border: 1px solid #ddd; }
 .btn-secondary:hover { background: #e8e8e8; }
-
 .alert { padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; font-size: 14px; }
 .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
 .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+/* === PASSWORD EYE ICON CSS === */
+.password-wrapper { position: relative; width: 100%; }
+.password-wrapper .form-control { padding-right: 40px; }
+.toggle-password { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; z-index: 2; transition: color 0.2s; }
+.toggle-password:hover { color: #333; }
 
 @media (max-width: 600px) {
     .profile-container { padding: 15px; }
@@ -138,121 +163,177 @@ textarea.form-control { resize: vertical; }
 </style>
 
 <script>
-function checkFileSize() {
-    const file = document.getElementById('achievementFile').files[0];
-    if (!file) return;
-    
-    const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-    document.getElementById('fileSize').textContent = sizeMB;
-    
-    if (file.type !== 'application/pdf') {
-        alert('Only PDF files are allowed');
-        document.getElementById('achievementFile').value = '';
-        return;
-    }
-    
-    const maxSize = 5 * 1024 * 1024; // 5 MB
-    if (file.size > maxSize) {
-        alert('File size cannot exceed 5 MB');
-        document.getElementById('achievementFile').value = '';
-        return;
-    }
-}
+    // ======================== VARIABLES FROM FLASK ========================
+    // Logic: If view_only is true, we limit functionality
+    const VIEW_ONLY = {{ 'true' if view_only else 'false' }};
+    const TARGET_USER_ID = {{ user.id }};
 
-function uploadAchievement() {
-    const title = document.getElementById('achievementTitle').value;
-    const desc = document.getElementById('achievementDesc').value;
-    const file = document.getElementById('achievementFile').files[0];
-    
-    if (!title || !desc || !file) {
-        alert('Please fill all fields');
-        return;
-    }
-    
-    const sizeMB = file.size / (1024 * 1024);
-    if (sizeMB > 5) {
-        alert('File size must be at most 5 MB');
-        return;
-    }
-    if (file.type !== 'application/pdf') {
-        alert('Only PDF files are allowed');
-        return;
-    }
-    
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('description', desc);
-    formData.append('file', file);
-    
-    fetch('/api/achievements/upload', {
-        method: 'POST',
-        body: formData
-    })
-    .then(r => r.json())
-    .then(d => {
-        if (d.message) {
-            alert('Achievement added successfully!');
-            document.getElementById('achievementTitle').value = '';
-            document.getElementById('achievementDesc').value = '';
-            document.getElementById('achievementFile').value = '';
-            document.getElementById('fileSize').textContent = '0';
-            loadAchievements();
+    // ======================== 0. PASSWORD VISIBILITY TOGGLE ========================
+    function togglePassword(inputId, icon) {
+        const input = document.getElementById(inputId);
+        if (input.type === "password") {
+            input.type = "text";
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
         } else {
-            alert('Error: ' + (d.error || 'Upload failed'));
+            input.type = "password";
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
         }
-    })
-    .catch(e => alert('Error: ' + e));
-}
+    }
 
-function loadAchievements() {
-    fetch('/api/achievements/list')
-    .then(r => r.json())
-    .then(data => {
-        const list = document.getElementById('achievementsList');
-        if (!data.achievements || data.achievements.length === 0) {
-            list.innerHTML = '<p class="no-achievements">No achievements added yet</p>';
+    // ======================== 1. CHANGE PASSWORD LOGIC ========================
+    // Only define this function if not in view_only mode
+    {% if not view_only %}
+    async function changePassword() {
+        const currentPassword = document.getElementById('oldPassword').value;
+        const newPassword = document.getElementById('newPassword').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            alert("Please fill in all password fields.");
             return;
         }
-        
-        let html = '';
-        data.achievements.forEach(ach => {
-            html += `
-                <div class="achievement-card">
-                    <h5>${ach.title}
-                        <button class="delete-btn" onclick="deleteAchievement(${ach.id})">Delete</button>
-                    </h5>
-                    <p class="desc">${ach.description}</p>
-                    
-                    <a href="${ach.file_url}" target="_blank" class="btn-view-pdf">
-                        👁️ View PDF
-                    </a>
-                    
-                    <small style="color: #999; display:block; margin-top:5px;">
-                        Added: ${new Date(ach.created_at).toLocaleDateString()}
-                    </small>
-                </div>
-            `;
-        });
-        list.innerHTML = html;
-    });
-}
 
-function deleteAchievement(id) {
-    if (!confirm('Delete this achievement?')) return;
-    fetch(`/api/achievements/${id}`, { method: 'DELETE' })
-    .then(r => r.json())
-    .then(d => {
-        if (d.message) {
-            loadAchievements();
-        } else {
-            alert('Error: ' + d.error);
+        if (newPassword !== confirmPassword) {
+            alert('New passwords do not match!');
+            return;
         }
-    });
-}
 
-// Load on page load
-loadAchievements();
+        try {
+            const response = await fetch('/api/profile/password', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    current_password: currentPassword,
+                    new_password: newPassword,
+                    confirm_password: confirmPassword
+                })
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                alert('✅ ' + result.message);
+                document.getElementById('oldPassword').value = '';
+                document.getElementById('newPassword').value = '';
+                document.getElementById('confirmPassword').value = '';
+            } else {
+                alert('❌ ' + (result.error || 'Failed to update password'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('❌ An error occurred while updating password');
+        }
+    }
+    {% endif %}
+
+    // ======================== 2. ACHIEVEMENTS LOGIC ========================
+    
+    // File check only needed if not view only
+    {% if not view_only %}
+    function checkFileSize() {
+        const file = document.getElementById('achievementFile').files[0];
+        if (!file) return;
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+        document.getElementById('fileSize').textContent = sizeMB;
+        
+        if (file.type !== 'application/pdf') {
+            alert('Only PDF files are allowed');
+            document.getElementById('achievementFile').value = '';
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            alert('File size cannot exceed 5 MB');
+            document.getElementById('achievementFile').value = '';
+            return;
+        }
+    }
+
+    function uploadAchievement() {
+        const title = document.getElementById('achievementTitle').value;
+        const desc = document.getElementById('achievementDesc').value;
+        const file = document.getElementById('achievementFile').files[0];
+        
+        if (!title || !desc || !file) { alert('Please fill all fields'); return; }
+        if (file.size > 5 * 1024 * 1024) { alert('File size must be at most 5 MB'); return; }
+        if (file.type !== 'application/pdf') { alert('Only PDF files are allowed'); return; }
+        
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('description', desc);
+        formData.append('file', file);
+        
+        fetch('/api/achievements/upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.message) {
+                alert('Achievement added successfully!');
+                document.getElementById('achievementTitle').value = '';
+                document.getElementById('achievementDesc').value = '';
+                document.getElementById('achievementFile').value = '';
+                document.getElementById('fileSize').textContent = '0';
+                loadAchievements();
+            } else {
+                alert('Error: ' + (d.error || 'Upload failed'));
+            }
+        })
+        .catch(e => alert('Error: ' + e));
+    }
+    {% endif %}
+
+    function loadAchievements() {
+        // Send user_id query param so backend knows whose achievements to fetch
+        fetch(`/api/achievements/list?user_id=${TARGET_USER_ID}`)
+        .then(r => r.json())
+        .then(data => {
+            const list = document.getElementById('achievementsList');
+            if (!data.achievements || data.achievements.length === 0) {
+                list.innerHTML = '<p class="no-achievements">No achievements found.</p>';
+                return;
+            }
+            
+            let html = '';
+            data.achievements.forEach(ach => {
+                html += `
+                    <div class="achievement-card">
+                        <h5>${ach.title}
+                            ${!VIEW_ONLY ? `<button class="delete-btn" onclick="deleteAchievement(${ach.id})">Delete</button>` : ''}
+                        </h5>
+                        <p class="desc">${ach.description}</p>
+                        
+                        <a href="${ach.file_url}" target="_blank" class="btn-view-pdf">
+                            👁️ View PDF
+                        </a>
+                        
+                        <small style="color: #999; display:block; margin-top:5px;">
+                            Added: ${new Date(ach.created_at).toLocaleDateString()}
+                        </small>
+                    </div>
+                `;
+            });
+            list.innerHTML = html;
+        });
+    }
+
+    {% if not view_only %}
+    function deleteAchievement(id) {
+        if (!confirm('Delete this achievement?')) return;
+        fetch(`/api/achievements/${id}`, { method: 'DELETE' })
+        .then(r => r.json())
+        .then(d => {
+            if (d.message) {
+                loadAchievements();
+            } else {
+                alert('Error: ' + d.error);
+            }
+        });
+    }
+    {% endif %}
+
+    // Load achievements when page opens
+    loadAchievements();
 </script>
-
-
 {% endblock %}

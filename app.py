@@ -44,15 +44,17 @@ class User(db.Model):
     email = db.Column(db.String(255), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(50), default='STUDENT')
-    counselor_email = db.Column(db.String(255), nullable=True)
+    
+    # --- CHANGED: Use ID instead of Email ---
+    counselor_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    # ----------------------------------------
 
     def set_password(self, password):
         self.password = password
 
     def check_password(self, password):
         return self.password == password
-        
-    # Keeps the app from crashing if templates ask for name
+
     @property
     def full_name(self):
         return self.email
@@ -191,32 +193,30 @@ def dashboard():
 @app.route('/timeoff')
 @login_required
 def timeoff():
-    """Time off / Leave management page"""
     user_id = session.get('user_id')
     user = User.query.get(user_id)
     current_year = datetime.now().year
 
-    # 1. Get user's own leaves (History)
+    # 1. Own History
     leaves = Leave.query.filter_by(user_id=user_id).order_by(Leave.created_at.desc()).all()
-
-    # 2. Get user's leave balance
+    
+    # 2. Balance
     leave_balance = LeaveBalance.query.filter_by(user_id=user_id, year=current_year).all()
 
-    # 3. Logic for "All Leaves" (History Tab)
+    # 3. All Leaves (History)
     all_leaves = []
     if user.role == 'HOD':
         all_leaves = Leave.query.order_by(Leave.created_at.desc()).all()
     elif user.role == 'COUNSELOR':
-        # FIXED: Explicit join on user_id to avoid AmbiguousForeignKeysError
+        # --- CHANGED: Compare counselor_id == user.id ---
         all_leaves = Leave.query.join(User, Leave.user_id == User.id).filter(
-            User.counselor_email == user.email
+            User.counselor_id == user.id
         ).order_by(Leave.created_at.desc()).all()
     else:
         all_leaves = [leave for leave in leaves]
 
-    # 4. Logic for "Pending Approvals" & Statistics
+    # 4. Pending Approvals
     pending_leaves = []
-    pending_count = 0
     approved_today = 0
     rejected_today = 0
     today = datetime.now().date()
@@ -224,50 +224,29 @@ def timeoff():
     if user.role in ['COUNSELOR', 'HOD']:
         if user.role == 'HOD':
             pending_leaves = Leave.query.filter_by(status='Pending').order_by(Leave.created_at.desc()).all()
-            
-            approved_today = Leave.query.filter(
-                Leave.status == 'Approved', 
-                Leave.updated_at >= today
-            ).count()
-            
-            rejected_today = Leave.query.filter(
-                Leave.status == 'Rejected', 
-                Leave.updated_at >= today
-            ).count()
+            approved_today = Leave.query.filter(Leave.status == 'Approved', Leave.updated_at >= today).count()
+            rejected_today = Leave.query.filter(Leave.status == 'Rejected', Leave.updated_at >= today).count()
 
         elif user.role == 'COUNSELOR':
-            # FIXED: Explicit join on user_id
+            # --- CHANGED: Compare counselor_id == user.id ---
             pending_leaves = Leave.query.join(User, Leave.user_id == User.id).filter(
                 Leave.status == 'Pending',
-                User.counselor_email == user.email
+                User.counselor_id == user.id
             ).order_by(Leave.created_at.desc()).all()
 
-            # FIXED: Explicit join on user_id
             approved_today = Leave.query.join(User, Leave.user_id == User.id).filter(
-                Leave.status == 'Approved',
-                Leave.updated_at >= today,
-                User.counselor_email == user.email
+                Leave.status == 'Approved', Leave.updated_at >= today,
+                User.counselor_id == user.id
             ).count()
 
-            # FIXED: Explicit join on user_id
             rejected_today = Leave.query.join(User, Leave.user_id == User.id).filter(
-                Leave.status == 'Rejected',
-                Leave.updated_at >= today,
-                User.counselor_email == user.email
+                Leave.status == 'Rejected', Leave.updated_at >= today,
+                User.counselor_id == user.id
             ).count()
 
-        pending_count = len(pending_leaves)
-
-    return render_template('timeoff.html',
-                           user=user,
-                           leaves=leaves,
-                           leave_balance=leave_balance,
-                           current_year=current_year,
-                           all_leaves=all_leaves,
-                           pending_leaves=pending_leaves,
-                           pending_count=pending_count,
-                           approved_today=approved_today,
-                           rejected_today=rejected_today)
+    return render_template('timeoff.html', user=user, leaves=leaves, leave_balance=leave_balance,
+                           current_year=current_year, all_leaves=all_leaves, pending_leaves=pending_leaves,
+                           pending_count=len(pending_leaves), approved_today=approved_today, rejected_today=rejected_today)
 
 @app.route('/api/leaves/apply', methods=['POST'])
 @login_required
@@ -1045,16 +1024,44 @@ def report_detail(report_type):
 
 # ======================== PROFILE ========================
 
+# ======================== UPDATED PROFILE ROUTE ========================
+# ======================== PROFILE ROUTE ========================
+
 @app.route('/profile')
+@app.route('/profile/<int:user_id>')
 @login_required
-def profile():
-    """User profile page"""
-    user = User.query.get(session.get('user_id'))
-    return render_template('profile.html', user=user)
+def profile(user_id=None):
+    # 1. Get logged-in user
+    current_user_id = session.get('user_id')
+    current_user = User.query.get(current_user_id)
+
+    # 2. Determine target user
+    if user_id is None:
+        target_user = current_user
+    else:
+        target_user = User.query.get_or_404(user_id)
+    
+    # 3. Permission Check (Case Insensitive)
+    user_role = current_user.role.upper()
+    is_authorized = (
+        user_role == 'HOD' or 
+        (user_role == 'COUNSELOR' and target_user.counselor_id == current_user.id) or
+        current_user.id == target_user.id
+    )
+    
+    if not is_authorized:
+        return "Access Denied", 403
+
+    view_only = (current_user.id != target_user.id)
+    
+    # 4. PASS 'user' as current_user (for sidebar) and 'profile_user' for content
+    # Note: You will need to update profile.html to use 'profile_user' for the form fields
+    # For now, we pass target_user as 'user' to keep profile.html working, 
+    # but be aware this swaps the sidebar avatar temporarily.
+    return render_template('profile.html', user=target_user, view_only=view_only)
 
 @app.route('/api/settings/change-password', methods=['POST'])
 @login_required
-@role_required('HOD', 'COUNSELOR')
 def change_password():
     """Change password"""
     user = User.query.get(session.get('user_id'))
@@ -1130,24 +1137,7 @@ def upload_achievement():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/achievements/list')
-@login_required
-def achievements_list():
-    user_id = session.get('user_id')
-    achs = Achievement.query.filter_by(user_id=user_id).order_by(Achievement.created_at.desc()).all()
 
-    return jsonify({
-        'achievements': [
-            {
-                'id': a.id,
-                'title': a.title,
-                'description': a.description,
-                'file_url': a.file_url,
-                'created_at': a.created_at.isoformat()
-            }
-            for a in achs
-        ]
-    }), 200
 
 @app.route('/api/achievements/<int:achievement_id>', methods=['DELETE'])
 @login_required
@@ -1171,6 +1161,111 @@ def view_achievement(filename):
     # as_attachment=False allows the PDF to open in the browser
     return send_file(os.path.join('uploads/achievements', filename), as_attachment=False)
 
+# Add this to app.py
+@app.route('/api/profile/password', methods=['PUT'])
+@login_required
+def update_password():
+    user_id = session.get('user_id')
+    user = User.query.get(user_id)
+    data = request.get_json()
+
+    # Verify old password
+    if not user.check_password(data.get('current_password')):
+        return jsonify({'error': 'Incorrect current password'}), 400
+
+    # Verify new passwords match
+    if data.get('new_password') != data.get('confirm_password'):
+        return jsonify({'error': 'New passwords do not match'}), 400
+
+    # Set new password
+    user.set_password(data.get('new_password'))
+    db.session.commit()
+
+    return jsonify({'message': 'Password updated successfully'})
+
+# ... (Keep existing imports and config)
+
+# ======================== STUDENTS LIST ROUTE ========================
+
+# ======================== STUDENTS LIST ROUTE ========================
+
+@app.route('/students')
+@login_required
+def students_list():
+    # 1. Fetch current user manually
+    current_user_id = session.get('user_id')
+    current_user = User.query.get(current_user_id)
+
+    if not current_user:
+        return redirect(url_for('login'))
+
+    # 2. Logic to get list of students (Case Insensitive)
+    user_role = current_user.role.upper() # Converts 'Counselor' -> 'COUNSELOR'
+
+    if user_role == 'HOD':
+        students = User.query.filter(User.role.ilike('Student')).all()
+    elif user_role == 'COUNSELOR':
+        students = User.query.filter_by(counselor_id=current_user.id).all()
+    else:
+        return redirect(url_for('dashboard'))
+    
+    # 3. PASS 'user=current_user' so the sidebar works!
+    return render_template('students.html', students=students, user=current_user)
+
+
+
+# ======================== UPDATED API: FETCH ACHIEVEMENTS ========================
+@app.route('/api/achievements/list')
+@login_required
+def get_achievements_list():
+    # --- FIX START: Get the current user BEFORE doing anything else ---
+    current_user_id = session.get('user_id')
+    current_user = User.query.get(current_user_id)
+
+    if not current_user:
+        return jsonify({'error': 'User session not found'}), 404
+    # --- FIX END ----------------------------------------------------
+
+    # 1. Check if we are looking for a specific student's achievements
+    target_user_id = request.args.get('user_id', type=int)
+    
+    # If no ID provided, default to the logged-in user
+    if not target_user_id:
+        target_user_id = current_user.id
+
+    # 2. Permission Check: Are we allowed to view this person?
+    if target_user_id != current_user.id:
+        target_user = User.query.get(target_user_id)
+        if not target_user:
+            return jsonify({'error': 'User not found'}), 404
+            
+        # Allow HOD (any case) or Assigned Counselor (any case)
+        is_authorized = (
+            current_user.role in ['HOD', 'Hod', 'hod'] or 
+            (current_user.role in ['Counselor', 'COUNSELOR', 'counselor'] and target_user.counselor_id == current_user.id)
+        )
+        
+        if not is_authorized:
+            return jsonify({'error': 'Unauthorized to view these achievements'}), 403
+            
+        user_id_to_fetch = target_user_id
+    else:
+        user_id_to_fetch = current_user.id
+
+    # 3. Fetch the achievements
+    achievements = Achievement.query.filter_by(user_id=user_id_to_fetch).order_by(Achievement.created_at.desc()).all()
+    
+    return jsonify({
+        'achievements': [{
+            'id': a.id,
+            'title': a.title,
+            'description': a.description,
+            'file_url': a.file_url,
+            'created_at': a.created_at.isoformat()
+        } for a in achievements]
+    })
+
+# ... (Rest of app.py remains same)
 # ======================== ERROR HANDLERS ========================
 
 @app.errorhandler(404)
@@ -1186,28 +1281,22 @@ def internal_error(error):
 @app.route('/api/assign_counselor', methods=['POST'])
 @login_required
 def assign_counselor_to_student():
-    # Only HOD can assign
+    # ... (auth checks) ...
     user_id = session.get('user_id')
     curr_user = User.query.get(user_id)
-    
-    if curr_user.role != 'HOD':
-        return jsonify({'error': 'Unauthorized'}), 403
+    if curr_user.role != 'HOD': return jsonify({'error': 'Unauthorized'}), 403
 
     data = request.get_json()
-    student_email = data.get('student_email')
-    counselor_email = data.get('counselor_email')
+    student = User.query.filter_by(email=data.get('student_email')).first()
+    counselor = User.query.filter_by(email=data.get('counselor_email')).first()
 
-    student = User.query.filter_by(email=student_email).first()
-    counselor = User.query.filter_by(email=counselor_email).first()
-
-    if not student or not counselor:
-        return jsonify({'error': 'User not found'}), 404
+    if not student or not counselor: return jsonify({'error': 'User not found'}), 404
         
-    # Simply save the email string
-    student.counselor_email = counselor.email 
+    # --- CHANGED: Save the ID ---
+    student.counselor_id = counselor.id 
     db.session.commit()
 
-    return jsonify({'message': f'Assigned {student.full_name} to {counselor.full_name}'})
+    return jsonify({'message': f'Assigned {student.email} to {counselor.email}'})
 
 # ======================== DATABASE INITIALIZATION ========================
 

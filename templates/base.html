@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{% block title %}WorkZen - HRMS{% endblock %}</title>
+    <title>{% block title %}MBIT - HRMS{% endblock %}</title>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
@@ -24,6 +24,8 @@
             --light-gray: #f3f4f6;
             --white: #ffffff;
             --border: #e5e7eb;
+            /* Increased header height for bigger logos */
+            --header-height: 150px; 
         }
 
         body {
@@ -33,51 +35,81 @@
             line-height: 1.6;
         }
 
-        /* Sidebar Styles */
-        .sidebar {
+        /* --- Header Styles (Big & Full Width) --- */
+        .header {
             position: fixed;
             left: 0;
             top: 0;
-            width: 250px;
-            height: 100vh;
+            right: 0;
+            height: var(--header-height);
             background: var(--white);
-            border-right: 1px solid var(--border);
-            padding: 20px 0;
-            overflow-y: auto;
-            z-index: 1000;
-        }
-
-        .logo {
-            padding: 20px 24px;
             border-bottom: 1px solid var(--border);
-            margin-bottom: 6px;
             display: flex;
             align-items: center;
-            gap: 12px;
+            justify-content: center;
+            padding: 0 20px;
+            z-index: 1001;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
 
-        .logo-image {
-            width: 45px;
-            height: 45px;
+        .institutional-header {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            justify-content: center;
+            width: 100%;
+            /* Allows content to stretch wider, reducing side space */
+            max-width: 95%; 
+        }
+
+        .inst-logo {
+            /* MADE LOGOS BIGGER */
+            height: 120px;
+            width: auto;
             object-fit: contain;
         }
 
-        .logo-text {
-            flex: 1;
+        .inst-text {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
-        .logo h2 {
-            color: var(--primary-color);
-            font-size: 24px;
-            font-weight: 700;
-            letter-spacing: 1px;
+        .inst-text h3 {
+            /* Increased font size to match big logos */
+            font-size: 1.5rem;
+            color: var(--dark);
             margin: 0;
+            font-weight: 700;
+            line-height: 1.2;
         }
 
-        .logo p {
-            font-size: 12px;
+        .inst-text p {
+            margin: 5px 0 0 0;
             color: var(--gray);
-            margin: 2px 0 0 0;
+            font-size: 1rem;
+        }
+
+        /* --- Sidebar Styles (Starts under header) --- */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: var(--header-height);
+            width: 250px;
+            height: calc(100vh - var(--header-height));
+            background: var(--white);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+            padding-top: 10px;
+        }
+
+        nav {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 0;
         }
 
         .nav-menu {
@@ -117,58 +149,23 @@
             height: 20px;
         }
 
-        /* Header Styles */
-        .header {
-            position: fixed;
-            left: 250px;
-            top: 0;
-            right: 0;
-            height: 70px;
-            background: var(--white);
-            border-bottom: 1px solid var(--border);
+        /* --- Sidebar Footer --- */
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            background: #f9fafb;
+            flex-shrink: 0;
+            width: 100%;
+        }
+
+        .user-profile-card {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 0 30px;
-            z-index: 999;
-        }
-
-        .header-left h1 {
-            font-size: 24px;
-            color: var(--dark);
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .notification-icon {
-            position: relative;
-            cursor: pointer;
-        }
-
-        .notification-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: var(--danger-color);
-            color: white;
-            border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            font-size: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
+            gap: 12px;
+            margin-bottom: 15px;
+            text-decoration: none;
+            color: inherit;
+            width: 100%;
         }
 
         .user-avatar {
@@ -181,311 +178,173 @@
             align-items: center;
             justify-content: center;
             font-weight: 600;
+            flex-shrink: 0;
         }
 
-        /* Main Content */
-        .main-content {
-            margin-left: 250px;
-            margin-top: 70px;
-            padding: 30px;
-            min-height: calc(100vh - 70px);
+        .user-info {
+            flex: 1;
+            min-width: 0;
         }
 
-        /* Cards */
-        .card {
-            background: var(--white);
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .card-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--dark);
-        }
-
-        /* Buttons */
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
+        .user-info h4 {
             font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .btn-primary {
-            background: var(--primary-color);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #4f46e5;
-        }
-
-        .btn-success {
-            background: var(--success-color);
-            color: white;
-        }
-
-        .btn-danger {
-            background: var(--danger-color);
-            color: white;
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--dark);
-        }
-
-        .btn-link {
-            background: transparent;
-            border: none;
-            color: var(--primary-color);
-            padding: 5px 10px;
-        }
-
-        /* Forms */
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: var(--dark);
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 10px 15px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-size: 14px;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: var(--primary-color);
-        }
-
-        /* Tables */
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .table th,
-        .table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .table th {
-            background: var(--light-gray);
             font-weight: 600;
+            margin: 0;
             color: var(--dark);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        /* Badges */
-        .badge {
-            padding: 4px 12px;
-            border-radius: 12px;
+        .user-info p {
             font-size: 12px;
-            font-weight: 500;
+            color: var(--gray);
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .badge-success {
-            background: #d1fae5;
-            color: var(--success-color);
-        }
-
-        .badge-warning {
-            background: #fef3c7;
-            color: #d97706;
-        }
-
-        .badge-danger {
-            background: #fee2e2;
-            color: var(--danger-color);
-        }
-
-        .badge-info {
-            background: #dbeafe;
-            color: #2563eb;
-        }
-
-        /* Stats Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background: var(--white);
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .stat-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .stat-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
+        .btn-logout {
+            width: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-
-        .stat-value {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--dark);
-        }
-
-        .stat-label {
-            color: var(--gray);
+            gap: 8px;
+            padding: 10px;
+            border: 1px solid #fee2e2;
+            background: white;
+            color: var(--danger-color);
+            border-radius: 6px;
             font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
         }
+
+        .btn-logout:hover {
+            background: #fee2e2;
+            border-color: #fca5a5;
+        }
+
+        /* --- Main Content --- */
+        .main-content {
+            margin-left: 250px;
+            margin-top: var(--header-height);
+            padding: 30px;
+            min-height: calc(100vh - var(--header-height));
+        }
+
+        /* Standard Components */
+        .card { background: var(--white); border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); margin-bottom: 20px; }
+        .btn { padding: 10px 20px; border-radius: 6px; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn-primary { background: var(--primary-color); color: white; border: none; }
 
         /* Responsive */
-        @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-
-            .header,
-            .main-content {
-                margin-left: 0;
-                left: 0;
-            }
+        @media (max-width: 992px) {
+            .inst-text h3 { font-size: 1.1rem; }
+            .inst-logo { height: 80px; }
+            .header { padding: 0 15px; }
+            :root { --header-height: 120px; }
         }
-        .logo-image {
-  width: 85px;
-  height: 85px;
-  object-fit: contain;
-}
+
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; }
+            .main-content { margin-left: 0; }
+            .inst-text { display: none; }
+        }
 
         {% block extra_css %}{% endblock %}
     </style>
 </head>
 <body>
-    <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="logo">
-            <img src="{{ url_for('static', filename='images/workzen_logo.jpg') }}" alt="WorkZen Logo" class="logo-image">
-            <div class="logo-text">
-                <h2>WorkZen</h2>
-                <p>HR Management System</p>
+
+    <header class="header">
+        <div class="institutional-header">
+            <a href="http://www.mbit.edu.in">
+                <img src="https://www.mbit.edu.in/wp-content/uploads/2021/12/webMBIT-1@2x.png" alt="MBIT Logo" class="inst-logo">
+            </a>
+
+            <div class="inst-text">
+                <h3>Madhuben & Bhanubhai Patel Institute of Technology</h3>
+                <p>(The Charutar Vidya Mandal (CVM) University)</p>
             </div>
+
+            <img src="https://www.mbit.edu.in/wp-content/uploads/2020/02/CVM-CVMU.jpg" alt="CVM Logo" class="inst-logo">
         </div>
+    </header>
+
+    <aside class="sidebar">
         <nav>
             <ul class="nav-menu">
                 <li class="nav-item">
                     <a href="{{ url_for('dashboard') }}" class="nav-link {% block nav_dashboard %}{% endblock %}">
-                        <span>
-                            <svg fill="none" stroke="#6366f1" width="20" height="20" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                            </svg>
-                        </span>
+                        <span><svg fill="none" stroke="#6366f1" width="20" height="20" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg></span>
                         Dashboard
                     </a>
-                
+                </li>
                 
                 <li class="nav-item">
                     <a href="{{ url_for('timeoff') }}" class="nav-link {% block nav_timeoff %}{% endblock %}">
-                        <span>
-                            <svg fill="none" stroke="#6b7280" width="20" height="20" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                            </svg>
-                        </span>
+                        <span><svg fill="none" stroke="#6b7280" width="20" height="20" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></span>
                         Time Off
                     </a>
                 </li>
-                
+
+                {% if user.role in ['Counselor', 'COUNSELOR', 'HOD'] %}
+                <li class="nav-item">
+                    <a href="{{ url_for('students_list') }}" class="nav-link">
+                        <span>
+                            <svg fill="none" stroke="#6b7280" width="20" height="20" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                        </span>
+                        Students
+                    </a>
                 </li>
+                {% endif %}
+
                 {% if user and user.role in ['HOD', 'COUNSELOR'] %}
                 <li class="nav-item">
                     <a href="{{ url_for('reports') }}" class="nav-link {% block nav_reports %}{% endblock %}">
-                        <span>
-                            <svg fill="none" stroke="#6b7280" width="20" height="20" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
-                        </span>
+                        <span><svg fill="none" stroke="#6b7280" width="20" height="20" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></span>
                         Reports
                     </a>
                 </li>
                 {% endif %}
-               
-                </li>
             </ul>
         </nav>
-    </aside>
 
-    <!-- Header -->
-    <header class="header">
-        <div class="header-left">
-            <h1>{% block page_title %}Dashboard{% endblock %}</h1>
-        </div>
-
-        <div class="header-right">
-            <div class="user-profile">
+        <div class="sidebar-footer">
+            <a href="{{ url_for('profile') }}" class="user-profile-card">
                 <div class="user-avatar">
                     {{ user.full_name[0] if user and user.full_name else 'U' }}
                 </div>
-                <div>
-                    <div style="font-weight: 600;">{{ user.full_name if user else 'User' }}</div>
-                    <div style="font-size: 12px; color: var(--gray);">{{ user.role.replace('_', ' ').title() if user else 'Guest' }}</div>
+                <div class="user-info">
+                    <h4 title="{{ user.full_name }}">{{ user.full_name if user else 'User' }}</h4>
+                    <p title="{{ user.email if user else 'Guest' }}">{{ user.email if user else 'Guest' }}</p>
                 </div>
-
-                <a href="{{ url_for('profile') }}" class="btn btn-link" style="margin-right: 15px;">
-                    Profile
-                </a>
-            </div>
-
-            <a href="{{ url_for('logout') }}" class="btn btn-outline" style="margin-left: 15px; display: flex; align-items: center; gap: 5px;">
-                Logout
+            </a>
+            
+            <a href="{{ url_for('logout') }}" class="btn-logout">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                Sign Out
             </a>
         </div>
-    </header>
+    </aside>
 
-    <!-- Main Content -->
     <main class="main-content">
-        {% block content %}
-        <!-- Page content goes here -->
-        {% endblock %}
+        {% block content %}{% endblock %}
     </main>
 
     <script>
         lucide.createIcons();
     </script>
-
     {% block extra_js %}{% endblock %}
 </body>
 </html>
