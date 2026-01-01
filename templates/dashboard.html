@@ -1,166 +1,79 @@
 {% extends "base.html" %}
-{% block title %}Dashboard - WorkZen{% endblock %}
+{% block title %}Student Leave Policy - WorkZen{% endblock %}
 {% block nav_dashboard %}active{% endblock %}
-{% block page_title %}Dashboard{% endblock %}
+{% block page_title %}Student Leave Policy{% endblock %}
 
 {% block content %}
-<div class="stats-grid">
-    <!-- Total Employees Card -->
-    <div class="stat-card">
-        <div class="stat-header">
-            <div>
-                <div class="stat-value">{{ total_employees }}</div>
-                <div class="stat-label">Total Employees</div>
-            </div>
-            <div class="stat-icon" style="background: #dbeafe;">
-                <svg width="24" height="24" fill="#2563eb" viewBox="0 0 24 24">
-                    <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-            </div>
-        </div>
-    </div>
-
-    <!-- Attendance Rate Card -->
-    <div class="stat-card">
-        <div class="stat-header">
-            <div>
-                <div class="stat-value">{{ attendance_rate }}%</div>
-                <div class="stat-label">Attendance Rate</div>
-            </div>
-            <div class="stat-icon" style="background: #d1fae5;">
-                <svg width="24" height="24" fill="#10b981" viewBox="0 0 24 24">
-                    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                </svg>
-            </div>
-        </div>
-    </div>
-
-    <!-- Pending Requests Card -->
-    <div class="stat-card">
-        <div class="stat-header">
-            <div>
-                <div class="stat-value">{{ pending_leaves }}</div>
-                <div class="stat-label">Pending Requests</div>
-            </div>
-            <div class="stat-icon" style="background: #fef3c7;">
-                <svg width="24" height="24" fill="#f59e0b" viewBox="0 0 24 24">
-                    <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            </div>
-        </div>
-    </div>
-
-    <!-- Total Payroll Card -->
-    <div class="stat-card">
-        <div class="stat-header">
-            <div>
-                <div class="stat-value">₹{{ total_payroll }}L</div>
-                <div class="stat-label">Total Payroll</div>
-            </div>
-            <div class="stat-icon" style="background: #e0e7ff;">
-                <svg width="24" height="24" fill="#6366f1" viewBox="0 0 24 24">
-                    <path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Quick Actions Card -->
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title">Quick Actions</h3>
+        <h2 class="card-title">Students Leave Policy</h2>
     </div>
-    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-        {% if user.role == 'EMPLOYEE' %}
-            <button class="btn btn-primary">Mark Attendance</button>
-            <button class="btn btn-primary">Apply for Leave</button>
-        {% elif user.role in ['HR_OFFICER', 'PAYROLL_OFFICER', 'ADMIN'] %}
-            <button class="btn btn-primary">Add Employee</button>
-            <button class="btn btn-primary">Generate Payroll</button>
-        {% endif %}
-    </div>
-</div>
+    <div class="card-body" style="padding: 20px;">
+        
+        <div style="margin-bottom: 30px;">
+            <h3>1. The 75% Attendance Rule</h3>
+            <ul>
+                <li><strong>Minimum Requirement:</strong> Students are typically required to maintain at least 75% attendance in each subject to be eligible for semester/final examinations.</li>
+                <li><strong>The "25% Buffer":</strong> This 25% is intended to cover minor illnesses, personal emergencies, and casual absences.</li>
+            </ul>
+        </div>
 
-<!-- Today's Attendance Card (for Employees) -->
-{% if today_attendance %}
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Today's Attendance</h3>
-    </div>
-    <div style="display: flex; gap: 20px;">
+        <div style="margin-bottom: 30px;">
+            <h3>2. Types of Leaves for Students</h3>
+            <div style="overflow-x: auto;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th style="width: 20%;">Leave Type</th>
+                            <th style="width: 40%;">Purpose</th>
+                            <th style="width: 40%;">Documentation Required</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Medical Leave</strong></td>
+                            <td>Serious illness or injury requiring prolonged rest.</td>
+                            <td>Medical certificate from a doctor.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sports Leave</strong></td>
+                            <td>Participating in state/national/college sports.</td>
+                            <td>Approval letter from the Sports Teacher/Coordinator/HOD.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Hackathon & Technical Event Leave</strong></td>
+                            <td>Participating in Hackathon.</td>
+                            <td>Invitation letter from Hackathon Institute and/or approval from the Mentor/Coordinator.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Cultural Event Leave</strong></td>
+                            <td>Participating in state/national/college Cultural Event.</td>
+                            <td>Written application (often signed by a Cultural Coordinator) and Approved by Counsellor/HOD.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Academic Leave</strong></td>
+                            <td>Participating in fests, seminars, or workshops.</td>
+                            <td>Invitation letter and/or any proof of Participation like Certificate.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Event Duty</strong></td>
+                            <td>Organizing/Volunteering for College.</td>
+                            <td>Written application (often signed by a Faculty Coordinator).</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <div>
-            <strong>Check-in:</strong> {{ today_attendance.checkin or 'Not marked' }}
+            <h3>3. Application & Approval Process</h3>
+            <ul>
+                <li><strong>Prior Approval:</strong> For planned leaves (events/sports/academic), students must apply at least 24-48 hours in advance.</li>
+                <li><strong>Emergency Reporting:</strong> In case of sudden illness, the student or parent should notify the Counsellor/HOD via email/WhatsApp/SMS on the first day of absence.</li>
+                <li><strong>Post-Leave Submission:</strong> Medical certificates and proof of absence must usually be submitted within 7 working days of returning to campus.</li>
+            </ul>
         </div>
-        <div>
-            <strong>Check-out:</strong> {{ today_attendance.checkout or 'Not marked' }}
-        </div>
-        <div>
-            <strong>Status:</strong> <span class="badge badge-success">{{ today_attendance.status }}</span>
-        </div>
+
     </div>
 </div>
-{% endif %}
-
-<!-- Leave Balance -->
-{% if leave_balance %}
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Leave Balance</h3>
-    </div>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Leave Type</th>
-                <th>Total Days</th>
-                <th>Used Days</th>
-                <th>Remaining Days</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for balance in leave_balance %}
-            <tr>
-                <td>{{ balance.leave_type }}</td>
-                <td>{{ balance.total_days }}</td>
-                <td>{{ balance.used_days }}</td>
-                <td><strong>{{ balance.remaining_days }}</strong></td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% endif %}
-
-<!-- Recent Payslips -->
-{% if recent_payslips %}
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Recent Payslips</h3>
-        <a href="{{ url_for('payroll') }}" class="btn btn-outline">View All</a>
-    </div>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Month</th>
-                <th>Gross Salary</th>
-                <th>Deductions</th>
-                <th>Net Salary</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for payslip in recent_payslips %}
-            <tr>
-                <td>{{ payslip.payroll_month.strftime('%B %Y') }}</td>
-                <td>₹{{ payslip.gross_earnings }}</td>
-                <td>₹{{ (payslip.pf + payslip.income_tax + payslip.professional_tax) | round(2) }}</td>
-                <td><strong>₹{{ payslip.net_salary }}</strong></td>
-                <td><span class="badge badge-success">{{ payslip.status }}</span></td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% endif %}
-
 {% endblock %}
