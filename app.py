@@ -247,11 +247,11 @@ def timeoff():
     return render_template('timeoff.html', user=user, leaves=leaves, leave_balance=leave_balance,
                            current_year=current_year, all_leaves=all_leaves, pending_leaves=pending_leaves,
                            pending_count=len(pending_leaves), approved_today=approved_today, rejected_today=rejected_today)
-
+"""
 @app.route('/api/leaves/apply', methods=['POST'])
 @login_required
 def apply_leave():
-    """Apply for leave with optional document upload"""
+    Apply for leave with optional document upload
     try:
         user_id = session.get('user_id')
         
@@ -354,6 +354,111 @@ def apply_leave():
             leave_id=leave.id
         ), 201
         
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(error=str(e)), 500
+"""
+
+@app.route('/api/leaves/apply', methods=['POST'])
+@login_required
+def apply_leave():
+    """Apply for leave with optional document upload (Unlimited Leave Enabled)"""
+    try:
+        user_id = session.get('user_id')
+
+        # ================= FORM DATA =================
+        start_date = datetime.strptime(request.form.get('start_date'), '%Y-%m-%d').date()
+        end_date = datetime.strptime(request.form.get('end_date'), '%Y-%m-%d').date()
+        leave_type = request.form.get('leave_type')
+        reason = request.form.get('reason')
+
+        num_days = (end_date - start_date).days + 1
+        current_year = datetime.now().year
+
+        # ================= FIND COUNSELOR =================
+        counselor = User.query.filter_by(role='COUNSELOR').first()
+
+        # ================= UNLIMITED LEAVE BALANCE =================
+        balance = LeaveBalance.query.filter_by(
+            user_id=user_id,
+            leave_type=leave_type,
+            year=current_year
+        ).first()
+
+        # Create balance record only for reporting
+        if not balance:
+            balance = LeaveBalance(
+                user_id=user_id,
+                leave_type=leave_type,
+                total_days=9999,        # Virtual unlimited
+                used_days=0,
+                remaining_days=9999,    # Never blocks leave
+                year=current_year
+            )
+            db.session.add(balance)
+            db.session.commit()
+
+        # ❌ NO balance.remaining_days check
+        # Unlimited leave – skip validation
+
+        # ================= CREATE LEAVE REQUEST =================
+        leave = Leave(
+            user_id=user_id,
+            leave_type=leave_type,
+            start_date=start_date,
+            end_date=end_date,
+            reason=reason,
+            number_of_days=num_days,
+            status='Pending',
+            approved_by=counselor.id if counselor else None
+        )
+
+        db.session.add(leave)
+        db.session.flush()  # Get leave.id before commit
+
+        # ================= DOCUMENT UPLOAD =================
+        if 'document' in request.files:
+            file = request.files['document']
+            document_type = request.form.get('document_type', 'Supporting Document')
+
+            if file and file.filename:
+                if not file.filename.lower().endswith('.pdf'):
+                    db.session.rollback()
+                    return jsonify({'error': 'Only PDF files are allowed'}), 400
+
+                file.seek(0, 2)
+                file_size = file.tell()
+                file.seek(0)
+
+                if file_size > 5 * 1024 * 1024:
+                    db.session.rollback()
+                    return jsonify({'error': 'File size exceeds 5 MB limit'}), 400
+
+                os.makedirs('uploads/leave_documents', exist_ok=True)
+
+                import secrets
+                safe_name = f"leave_{leave.id}_{user_id}_{secrets.token_hex(8)}.pdf"
+                path = os.path.join('uploads/leave_documents', safe_name)
+                file.save(path)
+
+                doc = LeaveDocument(
+                    leave_id=leave.id,
+                    user_id=user_id,
+                    file_url=f'/uploads/leave_documents/{safe_name}',
+                    file_size=file_size,
+                    file_name=secure_filename(file.filename),
+                    document_type=document_type
+                )
+                db.session.add(doc)
+
+        # ================= COMMIT =================
+        db.session.commit()
+
+        return jsonify(
+            message='Leave request submitted successfully (Unlimited Leave Enabled)',
+            leave_id=leave.id
+        ), 201
+
     except Exception as e:
         db.session.rollback()
         return jsonify(error=str(e)), 500
