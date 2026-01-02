@@ -254,6 +254,31 @@
             .main-content { margin-left: 0; }
             .inst-text { display: none; }
         }
+        /* New Style for Profile Button */
+        .btn-profile {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px;
+            border: 1px solid var(--border);
+            background: white;
+            color: var(--dark);
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            margin-bottom: 8px; /* Spacing between Profile and Sign Out */
+        }
+
+        .btn-profile:hover {
+            background: var(--light-gray);
+            border-color: #d1d5db;
+            color: var(--primary-color);
+        }
 
         {% block extra_css %}{% endblock %}
     </style>
@@ -288,7 +313,7 @@
                 <li class="nav-item">
                     <a href="{{ url_for('timeoff') }}" class="nav-link {% block nav_timeoff %}{% endblock %}">
                         <span><svg fill="none" stroke="#6b7280" width="20" height="20" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></span>
-                        Time Off
+                        Leave Requests
                     </a>
                 </li>
 
@@ -317,7 +342,7 @@
         </nav>
 
         <div class="sidebar-footer">
-            <a href="{{ url_for('profile') }}" class="user-profile-card">
+            <div class="user-profile-card">
                 <div class="user-avatar">
                     {{ user.full_name[0] if user and user.full_name else 'U' }}
                 </div>
@@ -325,6 +350,14 @@
                     <h4 title="{{ user.full_name }}">{{ user.full_name if user else 'User' }}</h4>
                     <p title="{{ user.email if user else 'Guest' }}">{{ user.email if user else 'Guest' }}</p>
                 </div>
+            </div>
+
+            <a href="{{ url_for('profile') }}" class="btn-profile">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                Profile
             </a>
             
             <a href="{{ url_for('logout') }}" class="btn-logout">
@@ -335,13 +368,14 @@
                 </svg>
                 Sign Out
             </a>
+        </div>
 
-            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #e5e7eb; text-align: center; font-size: 11px; color: #9ca3af;">
+        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #e5e7eb; text-align: center; font-size: 11px; color: #9ca3af;">
                 <p style="margin-bottom: 2px;">Designed & Developed by</p>
                 <p style="font-weight: 600; color: #4b5563;">Shyam Patel | Tithi Bhatt | Sujal Patel</p>
                 <p>From 4CE3</p>
+                <p>Contact: +91 9427204258</p>
             </div>
-        </div>
     </aside>
 
     <main class="main-content">
