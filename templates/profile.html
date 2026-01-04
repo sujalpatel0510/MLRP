@@ -1,321 +1,424 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="profile-container">
-    <div class="profile-header">
-        <div class="header-section">
-            <h1>
+<div class="main-container">
+    <div class="page-header">
+        <div class="header-content">
+            <h1 class="page-title">
                 {% if view_only %}
-                    Student Profile: {{ user.full_name }}
+                    Student Profile
                 {% else %}
                     My Profile
                 {% endif %}
             </h1>
-            
-            {% if view_only %}
-                <a href="{{ url_for('students_list') }}" class="back-button">
-                    <i class="fas fa-arrow-left"></i> Back to List
-                </a>
-            {% else %}
-                <a href="{{ url_for('dashboard') }}" class="back-button">
-                    <i class="fas fa-arrow-left"></i> Back
-                </a>
-            {% endif %}
-        </div>
-    </div>
-
-    <div class="profile-section">
-            <h3>Profile Info</h3>
-            
-            <div class="email-container">
-                <div class="info-row" style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
-                    <label style="font-weight: bold; width: 120px; display: inline-block;">Full Name:</label>
-                    <span style="color: #333; font-size: 1.1em;">{{ user.full_name or 'Not Assigned' }}</span>
-                </div>
-
-                <div class="info-row">
-                    <label style="font-weight: bold; width: 120px; display: inline-block;">Email Address:</label>
-                    <span>{{ user.email }}</span>
-                </div>
-            </div>
+            <p class="text-muted">Manage account details and achievements</p>
         </div>
         
-        {% if not view_only %}
-        <div class="profile-section">
-            <h3>Change Password</h3>
-            <div class="password-container">
-                
-                <div class="form-group">
-                    <label class="form-label">Old Password</label>
-                    <div class="password-wrapper">
-                        <input type="password" id="oldPassword" class="form-control" placeholder="Enter current password">
-                        <i class="fas fa-eye toggle-password" onclick="togglePassword('oldPassword', this)"></i>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">New Password</label>
-                    <div class="password-wrapper">
-                        <input type="password" id="newPassword" class="form-control" placeholder="Enter new password">
-                        <i class="fas fa-eye toggle-password" onclick="togglePassword('newPassword', this)"></i>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Confirm Password</label>
-                    <div class="password-wrapper">
-                        <input type="password" id="confirmPassword" class="form-control" placeholder="Confirm new password">
-                        <i class="fas fa-eye toggle-password" onclick="togglePassword('confirmPassword', this)"></i>
-                    </div>
-                </div>
-
-                <button class="btn btn-primary" onclick="changePassword()">
-                    Change Password
-                </button>
-            </div>
-        </div>
+        {% if view_only %}
+            <a href="{{ url_for('students_list') }}" class="btn-back">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                Back to Students
+            </a>
+        {% else %}
+            <a href="{{ url_for('dashboard') }}" class="btn-back">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                Back to Dashboard
+            </a>
         {% endif %}
+    </div>
 
-        <div class="profile-section">
-            <h3>Achievements</h3>
-            
+    <div class="profile-grid">
+        <div class="profile-column">
+            <div class="card profile-card">
+                <div class="card-header">
+                    <h3>Personal Information</h3>
+                </div>
+                <div class="card-body">
+                    <div class="avatar-circle">
+                        {{ student.full_name[0] if student.full_name else 'S' }}
+                    </div>
+                    <h2 class="profile-name">{{ student.full_name or 'No Name' }}</h2>
+                    <span class="badge badge-role">{{ student.role }}</span>
+                    
+                    <div class="info-list">
+                        <div class="info-item">
+                            <label>Full Name</label>
+                            <div class="info-value">{{ student.full_name }}</div>
+                        </div>
+                        <div class="info-item">
+                            <label>Email Address</label>
+                            <div class="info-value copy-text" onclick="copyToClipboard('{{ student.email }}')" title="Click to copy">
+                                {{ student.email }}
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {% if not view_only %}
-            <div class="achievement-form">
-                <h4>Add New Achievement</h4>
-                
-                <div class="form-group">
-                    <label class="form-label">Achievement Title</label>
-                    <input type="text" id="achievementTitle" class="form-control" placeholder="e.g., AWS Certification, Project Award">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Security</h3>
                 </div>
-
-                <div class="form-group">
-                    <label class="form-label">Description</label>
-                    <textarea id="achievementDesc" class="form-control" placeholder="Describe your achievement..." rows="3"></textarea>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>Current Password</label>
+                        <input type="password" id="oldPassword" class="form-control" placeholder="••••••••">
+                    </div>
+                    <div class="form-group">
+                        <label>New Password</label>
+                        <input type="password" id="newPassword" class="form-control" placeholder="Enter new password">
+                    </div>
+                    <div class="form-group">
+                        <label>Confirm Password</label>
+                        <input type="password" id="confirmPassword" class="form-control" placeholder="Confirm new password">
+                    </div>
+                    <button class="btn btn-primary w-100" onclick="changePassword()">Update Password</button>
                 </div>
-
-                <div class="form-group">
-                    <label class="form-label">Upload PDF</label>
-                    <input type="file" id="achievementFile" class="form-control" accept=".pdf" onchange="checkFileSize()">
-                    <small class="file-info">File size: <span id="fileSize">0</span> MB | Max: 5 MB | Format: PDF only</small>
-                </div>
-
-                <button class="btn btn-primary" onclick="uploadAchievement()">
-                    Add Achievement
-                </button>
             </div>
             {% endif %}
+        </div>
 
-            <div class="achievements-list" id="achievementsList">
-                <p class="no-achievements">Loading...</p>
+        <div class="profile-column flex-grow">
+            <div class="card">
+                <div class="card-header flex-between">
+                    <h3>Achievements & Certifications</h3>
+                    {% if not view_only %}
+                        <button class="btn btn-sm btn-outline" onclick="toggleAchievementForm()">
+                            + Add New
+                        </button>
+                    {% endif %}
+                </div>
+                
+                <div class="card-body">
+                    {% if not view_only %}
+                    <div class="achievement-form" id="achievementForm" style="display: none;">
+                        <div class="form-group">
+                            <label>Title</label>
+                            <input type="text" id="achievementTitle" class="form-control" placeholder="e.g. AWS Cloud Practitioner">
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="achievementDesc" class="form-control" rows="2" placeholder="Brief details about the certification..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Certificate (PDF)</label>
+                            <div class="file-upload-wrapper">
+                                <input type="file" id="achievementFile" accept=".pdf" onchange="checkFileSize()">
+                                <small>Max size: 5MB</small>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button class="btn btn-primary" onclick="uploadAchievement()">Save</button>
+                            <button class="btn btn-text" onclick="toggleAchievementForm()">Cancel</button>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div id="achievementsList" class="achievements-grid">
+                        <div class="loading-spinner">Loading achievements...</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <style>
-/* Existing Styles */
-.profile-container { max-width: 800px; margin: 0 auto; padding: 20px; }
-.profile-header { margin-bottom: 30px; border-bottom: 2px solid #f0f0f0; padding-bottom: 20px; }
-.header-section { display: flex; justify-content: space-between; align-items: center; }
-.header-section h1 { margin: 0; font-size: 28px; }
-.back-button { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: #f5f5f5; border-radius: 6px; text-decoration: none; color: #333; cursor: pointer; transition: background 0.3s; }
-.back-button:hover { background: #e0e0e0; }
-.profile-content { display: grid; gap: 20px; }
-.profile-section { background: #fafafa; padding: 20px; border-radius: 8px; border: 1px solid #e0e0e0; }
-.profile-section h3 { margin-top: 0; margin-bottom: 16px; font-size: 18px; }
-.profile-section p { margin: 0 0 16px 0; color: #666; font-size: 14px; }
-.email-container { background: white; padding: 15px; border-radius: 6px; }
-.password-container { background: white; padding: 15px; border-radius: 6px; }
-.achievement-form { background: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #e0e0e0; }
-.achievement-form h4 { margin: 0 0 16px 0; font-size: 16px; color: #333; }
-.achievements-list { background: white; padding: 15px; border-radius: 6px; }
-.no-achievements { text-align: center; color: #999; margin: 20px 0; }
-.achievement-card { background: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 6px; padding: 15px; margin-bottom: 12px; }
-.achievement-card h5 { margin: 0 0 8px 0; font-size: 16px; color: #333; display: flex; justify-content: space-between; align-items: center; }
-.achievement-card .desc { color: #666; font-size: 13px; margin-bottom: 8px; line-height: 1.4; }
-.achievement-card .file-link { display: inline-block; padding: 6px 12px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 12px; margin-right: 8px; }
-.achievement-card .file-link:hover { background: #5568d3; }
-.achievement-card .delete-btn { display: inline-block; padding: 6px 12px; background: #ff6b6b; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
-.achievement-card .delete-btn:hover { background: #ee5a52; }
-.info-row { display: flex; justify-content: space-between; padding: 10px 0; }
-.info-row label { font-weight: 500; color: #666; }
-.info-row span { color: #333; word-break: break-all; }
-.form-group { margin-bottom: 16px; }
-.form-label { display: block; margin-bottom: 6px; font-weight: 500; color: #333; font-size: 14px; }
-.form-control { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; box-sizing: border-box; font-family: inherit; }
-.form-control:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
-textarea.form-control { resize: vertical; }
-.file-info { display: block; margin-top: 4px; color: #999; font-size: 12px; }
-.btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 14px; transition: all 0.3s; }
-.btn-primary { background: #667eea; color: white; }
-.btn-primary:hover { background: #5568d3; }
-.btn-secondary { background: #f0f0f0; color: #333; border: 1px solid #ddd; }
-.btn-secondary:hover { background: #e8e8e8; }
-.alert { padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; font-size: 14px; }
-.alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-.alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    /* --- Modern Layout & Variables --- */
+    :root {
+        --primary: #6366f1;
+        --primary-hover: #4f46e5;
+        --bg-light: #f3f4f6;
+        --card-bg: #ffffff;
+        --text-dark: #1f2937;
+        --text-muted: #6b7280;
+        --border-color: #e5e7eb;
+        --radius: 12px;
+        --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
 
-/* === PASSWORD EYE ICON CSS === */
-.password-wrapper { position: relative; width: 100%; }
-.password-wrapper .form-control { padding-right: 40px; }
-.toggle-password { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; z-index: 2; transition: color 0.2s; }
-.toggle-password:hover { color: #333; }
+    .main-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        animation: fadeIn 0.5s ease-in-out;
+    }
 
-@media (max-width: 600px) {
-    .profile-container { padding: 15px; }
-    .header-section { flex-direction: column; gap: 15px; align-items: flex-start; }
-}
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* --- Header --- */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+    .page-title { font-size: 1.75rem; font-weight: 700; color: var(--text-dark); margin: 0; }
+    .text-muted { color: var(--text-muted); margin: 5px 0 0; font-size: 0.95rem; }
+    
+    .btn-back {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        color: var(--text-dark);
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    .btn-back:hover { background: var(--bg-light); border-color: #d1d5db; }
+
+    /* --- Grid Layout --- */
+    .profile-grid {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        gap: 25px;
+    }
+    @media (max-width: 900px) { .profile-grid { grid-template-columns: 1fr; } }
+
+    /* --- Cards --- */
+    .card {
+        background: var(--card-bg);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+        margin-bottom: 25px;
+    }
+    .card-header {
+        padding: 20px 25px;
+        border-bottom: 1px solid var(--border-color);
+        background: #f9fafb;
+    }
+    .card-header h3 { margin: 0; font-size: 1.1rem; font-weight: 600; color: var(--text-dark); }
+    .card-body { padding: 25px; }
+
+    /* --- Profile Info --- */
+    .profile-card .card-body { text-align: center; }
+    .avatar-circle {
+        width: 100px;
+        height: 100px;
+        background: var(--primary);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0 auto 15px;
+        box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
+    }
+    .profile-name { margin: 0; font-size: 1.4rem; font-weight: 700; color: var(--text-dark); }
+    .badge-role {
+        display: inline-block;
+        background: #e0e7ff;
+        color: var(--primary);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-top: 5px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .info-list { margin-top: 25px; text-align: left; }
+    .info-item { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #f3f4f6; }
+    .info-item:last-child { border-bottom: none; margin-bottom: 0; }
+    .info-item label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px; }
+    .info-value { font-size: 1rem; color: var(--text-dark); font-weight: 500; display: flex; align-items: center; gap: 8px; }
+    .copy-text { cursor: pointer; transition: color 0.2s; }
+    .copy-text:hover { color: var(--primary); }
+
+    /* --- Forms --- */
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 0.9rem; color: var(--text-dark); }
+    .form-control {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); }
+    
+    .btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+        font-size: 0.95rem;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
+    .btn-outline { background: white; border: 1px solid var(--primary); color: var(--primary); padding: 6px 12px; font-size: 0.9rem; }
+    .btn-outline:hover { background: #e0e7ff; }
+    .btn-text { background: none; color: var(--text-muted); }
+    .btn-text:hover { color: var(--text-dark); }
+    .w-100 { width: 100%; }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; }
+
+    /* --- Achievement Form & List --- */
+    .achievement-form {
+        background: #f8fafc;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        border: 1px dashed #cbd5e1;
+    }
+    
+    .achievements-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 15px;
+    }
+
+    .achievement-item {
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 15px;
+        transition: all 0.2s;
+        position: relative;
+    }
+    .achievement-item:hover {
+        border-color: var(--primary);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .ach-icon {
+        width: 40px;
+        height: 40px;
+        background: #e0e7ff;
+        color: var(--primary);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 12px;
+    }
+    .ach-title { font-weight: 600; font-size: 1.05rem; margin-bottom: 5px; color: var(--text-dark); }
+    .ach-desc { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px; line-height: 1.4; }
+    .ach-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f3f4f6; padding-top: 10px; margin-top: 10px; }
+    
+    .btn-view { color: var(--primary); text-decoration: none; font-size: 0.9rem; font-weight: 500; display: flex; align-items: center; gap: 5px; }
+    .btn-delete { color: var(--danger-color, #ef4444); background: none; border: none; cursor: pointer; font-size: 0.85rem; }
+    .btn-delete:hover { text-decoration: underline; }
+
 </style>
 
 <script>
-    // ======================== VARIABLES FROM FLASK ========================
-    // Logic: If view_only is true, we limit functionality
+    const STUDENT_ID = {{ student.id }};
     const VIEW_ONLY = {{ 'true' if view_only else 'false' }};
-    const TARGET_USER_ID = {{ user.id }};
 
-    // ======================== 0. PASSWORD VISIBILITY TOGGLE ========================
-    function togglePassword(inputId, icon) {
-        const input = document.getElementById(inputId);
-        if (input.type === "password") {
-            input.type = "text";
-            icon.classList.remove('fa-eye');
-            icon.classList.add('fa-eye-slash');
-        } else {
-            input.type = "password";
-            icon.classList.remove('fa-eye-slash');
-            icon.classList.add('fa-eye');
-        }
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert("Email copied to clipboard!");
+        });
     }
 
-    // ======================== 1. CHANGE PASSWORD LOGIC ========================
-    // Only define this function if not in view_only mode
-    {% if not view_only %}
-    async function changePassword() {
-        const currentPassword = document.getElementById('oldPassword').value;
-        const newPassword = document.getElementById('newPassword').value;
-        const confirmPassword = document.getElementById('confirmPassword').value;
-
-        if (!currentPassword || !newPassword || !confirmPassword) {
-            alert("Please fill in all password fields.");
-            return;
-        }
-
-        if (newPassword !== confirmPassword) {
-            alert('New passwords do not match!');
-            return;
-        }
-
-        try {
-            const response = await fetch('/api/profile/password', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    current_password: currentPassword,
-                    new_password: newPassword,
-                    confirm_password: confirmPassword
-                })
-            });
-
-            const result = await response.json();
-            if (response.ok) {
-                alert('✅ ' + result.message);
-                document.getElementById('oldPassword').value = '';
-                document.getElementById('newPassword').value = '';
-                document.getElementById('confirmPassword').value = '';
-            } else {
-                alert('❌ ' + (result.error || 'Failed to update password'));
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('❌ An error occurred while updating password');
-        }
+    function toggleAchievementForm() {
+        const form = document.getElementById('achievementForm');
+        form.style.display = form.style.display === 'none' ? 'block' : 'none';
     }
-    {% endif %}
 
-    // ======================== 2. ACHIEVEMENTS LOGIC ========================
-    
-    // File check only needed if not view only
-    {% if not view_only %}
     function checkFileSize() {
         const file = document.getElementById('achievementFile').files[0];
-        if (!file) return;
-        const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-        document.getElementById('fileSize').textContent = sizeMB;
-        
-        if (file.type !== 'application/pdf') {
-            alert('Only PDF files are allowed');
+        if (file && file.size > 5 * 1024 * 1024) {
+            alert("File too large! Max size is 5MB.");
             document.getElementById('achievementFile').value = '';
+        }
+    }
+
+    function changePassword() {
+        const oldPass = document.getElementById('oldPassword').value;
+        const newPass = document.getElementById('newPassword').value;
+        const confirmPass = document.getElementById('confirmPassword').value;
+
+        if (newPass !== confirmPass) {
+            alert("New passwords do not match!");
             return;
         }
-        if (file.size > 5 * 1024 * 1024) {
-            alert('File size cannot exceed 5 MB');
-            document.getElementById('achievementFile').value = '';
-            return;
-        }
+
+        fetch('/api/change_password', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ old_password: oldPass, new_password: newPass })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) alert(data.error);
+            else {
+                alert("Password changed successfully!");
+                location.reload();
+            }
+        });
     }
 
     function uploadAchievement() {
         const title = document.getElementById('achievementTitle').value;
         const desc = document.getElementById('achievementDesc').value;
-        const file = document.getElementById('achievementFile').files[0];
-        
-        if (!title || !desc || !file) { alert('Please fill all fields'); return; }
-        if (file.size > 5 * 1024 * 1024) { alert('File size must be at most 5 MB'); return; }
-        if (file.type !== 'application/pdf') { alert('Only PDF files are allowed'); return; }
-        
+        const fileInput = document.getElementById('achievementFile');
+
+        if (!title || !desc || !fileInput.files[0]) {
+            alert("Please fill all fields and select a PDF.");
+            return;
+        }
+
         const formData = new FormData();
         formData.append('title', title);
         formData.append('description', desc);
-        formData.append('file', file);
-        
-        fetch('/api/achievements/upload', {
+        formData.append('file', fileInput.files[0]);
+
+        fetch(`/api/achievements/upload?user_id=${STUDENT_ID}`, {
             method: 'POST',
             body: formData
         })
-        .then(r => r.json())
-        .then(d => {
-            if (d.message) {
-                alert('Achievement added successfully!');
-                document.getElementById('achievementTitle').value = '';
-                document.getElementById('achievementDesc').value = '';
-                document.getElementById('achievementFile').value = '';
-                document.getElementById('fileSize').textContent = '0';
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) alert(data.error);
+            else {
+                alert("Achievement added!");
                 loadAchievements();
-            } else {
-                alert('Error: ' + (d.error || 'Upload failed'));
+                toggleAchievementForm();
             }
-        })
-        .catch(e => alert('Error: ' + e));
+        });
     }
-    {% endif %}
 
     function loadAchievements() {
-        // Send user_id query param so backend knows whose achievements to fetch
-        fetch(`/api/achievements/list?user_id=${TARGET_USER_ID}`)
-        .then(r => r.json())
+        fetch(`/api/achievements?user_id=${STUDENT_ID}`)
+        .then(res => res.json())
         .then(data => {
             const list = document.getElementById('achievementsList');
-            if (!data.achievements || data.achievements.length === 0) {
-                list.innerHTML = '<p class="no-achievements">No achievements found.</p>';
+            if (data.achievements.length === 0) {
+                list.innerHTML = '<p class="text-muted" style="grid-column: 1/-1; text-align: center;">No achievements added yet.</p>';
                 return;
             }
             
             let html = '';
             data.achievements.forEach(ach => {
                 html += `
-                    <div class="achievement-card">
-                        <h5>${ach.title}
-                            ${!VIEW_ONLY ? `<button class="delete-btn" onclick="deleteAchievement(${ach.id})">Delete</button>` : ''}
-                        </h5>
-                        <p class="desc">${ach.description}</p>
-                        
-                        <a href="${ach.file_url}" target="_blank" class="btn-view-pdf">
-                            👁️ View PDF
-                        </a>
-                        
-                        <small style="color: #999; display:block; margin-top:5px;">
-                            Added: ${new Date(ach.created_at).toLocaleDateString()}
-                        </small>
+                    <div class="achievement-item">
+                        <div class="ach-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+                        </div>
+                        <div class="ach-title">${ach.title}</div>
+                        <div class="ach-desc">${ach.description}</div>
+                        <div class="ach-footer">
+                            <a href="${ach.file_url}" target="_blank" class="btn-view">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                View PDF
+                            </a>
+                            ${!VIEW_ONLY ? `<button class="btn-delete" onclick="deleteAchievement(${ach.id})">Remove</button>` : ''}
+                        </div>
                     </div>
                 `;
             });
@@ -323,22 +426,17 @@ textarea.form-control { resize: vertical; }
         });
     }
 
-    {% if not view_only %}
     function deleteAchievement(id) {
-        if (!confirm('Delete this achievement?')) return;
+        if (!confirm("Are you sure you want to delete this achievement?")) return;
         fetch(`/api/achievements/${id}`, { method: 'DELETE' })
-        .then(r => r.json())
-        .then(d => {
-            if (d.message) {
-                loadAchievements();
-            } else {
-                alert('Error: ' + d.error);
-            }
+        .then(res => res.json())
+        .then(data => {
+            if (data.message) loadAchievements();
+            else alert(data.error);
         });
     }
-    {% endif %}
 
-    // Load achievements when page opens
+    // Initialize
     loadAchievements();
 </script>
 {% endblock %}

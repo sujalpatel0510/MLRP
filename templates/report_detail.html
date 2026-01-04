@@ -334,33 +334,41 @@
     </div>
     
     <div class="table-responsive">
-        <table class="table" id="reportTable">
-            <thead>
-                <tr>
-                    {% for header in table_headers %}
-                    <th>{{ header }}</th>
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% if table_data and table_data|length > 0 %}
-                    {% for row in table_data %}
-                    <tr>
-                        {% for cell in row %}
-                        <td>{{ cell }}</td>
-                        {% endfor %}
-                    </tr>
-                    {% endfor %}
-                {% else %}
-                <tr>
-                    <td colspan="{{ table_headers|length }}" style="text-align: center; padding: 40px; color: var(--gray);">
-                        No data available for the selected filters
-                    </td>
-                </tr>
-                {% endif %}
-            </tbody>
-        </table>
-    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Student Name</th>
+                <th>Email</th>
+                <th>Type</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Days</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in report_data %}
+            <tr>
+                <td>
+                    <div style="font-weight: 600;">{{ record.requester.full_name }}</div>
+                </td>
+                <td>
+                    <div style="color: #666; font-size: 0.9em;">{{ record.requester.email }}</div>
+                </td>
+                <td>
+                    <span class="badge badge-{{ record.leave_type|lower }}">{{ record.leave_type }}</span>
+                </td>
+                <td>{{ record.start_date.strftime('%Y-%m-%d') }}</td>
+                <td>{{ record.end_date.strftime('%Y-%m-%d') }}</td>
+                <td>{{ record.number_of_days }}</td>
+                <td>
+                    <span class="status-badge status-{{ record.status|lower }}">{{ record.status }}</span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 </div>
 {% endblock %}
 

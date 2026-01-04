@@ -15,6 +15,10 @@ from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
 from reportlab.lib import colors
 from io import BytesIO
+from reportlab.platypus import Image as ReportLabImage 
+import ssl
+from urllib.request import Request, urlopen
+from reportlab.lib.utils import ImageReader
 from werkzeug.utils import secure_filename
 
 # import qrcode
@@ -682,28 +686,101 @@ def reject_leave(leave_id):
 
 @app.route('/api/leaves/report', methods=['GET'])
 @login_required
-def generate_leave_report():
 
-    """Generate comprehensive PDF report for all leave requests"""
+
+def generate_leave_report():
+    """Generate comprehensive PDF report with Robust Image Loading"""
     try:
         user_id = session.get('user_id')
         user = User.query.get(user_id)
         leaves = Leave.query.all()
         
-        # Get statistics
+        # Statistics
         total_leaves = len(leaves)
         pending_leaves = len([l for l in leaves if l.status == 'Pending'])
         approved_leaves = len([l for l in leaves if l.status == 'Approved'])
         rejected_leaves = len([l for l in leaves if l.status == 'Rejected'])
         
-        # Create PDF in memory
         pdf_buffer = BytesIO()
+
+        # --- HELPER: Fetch Image safely (Bypassing SSL errors) ---
+        def get_image_from_url(url):
+            try:
+                # Create a context that doesn't verify SSL certificates (fixes common download issues)
+                ctx = ssl.create_default_context()
+                ctx.check_hostname = False
+                ctx.verify_mode = ssl.CERT_NONE
+                
+                # Add a User-Agent header so the server doesn't block us
+                req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+                
+                # Read data
+                response = urlopen(req, context=ctx)
+                image_data = BytesIO(response.read())
+                return ImageReader(image_data)
+            except Exception as e:
+                print(f"Error fetching image {url}: {e}")
+                return None
+
+        # --- HEADER FUNCTION ---
+        def draw_header(canvas, doc):
+            canvas.saveState()
+            page_width, page_height = A4
+            
+            # 1. Define Image URLs
+            mbit_url = "https://www.mbit.edu.in/wp-content/uploads/2021/12/webMBIT-1@2x.png"
+            cvm_url = "https://www.mbit.edu.in/wp-content/uploads/2020/02/CVM-CVMU.jpg"
+            
+            # 2. Draw Left Logo (MBIT)
+            logo_mbit = get_image_from_url(mbit_url)
+            if logo_mbit:
+                # x=20, y=Top-110, Width=180, Height=Auto
+                canvas.drawImage(logo_mbit, 0.4*inch, page_height - 1.6*inch, 
+                               width=2.5*inch, height=0.9*inch, 
+                               mask='auto', preserveAspectRatio=True, anchor='w')
+            else:
+                # Fallback text
+                canvas.setFont('Helvetica-Oblique', 10)
+                canvas.drawString(0.5*inch, page_height - 1*inch, "MBIT")
+
+            # 3. Draw Right Logo (CVM)
+            logo_cvm = get_image_from_url(cvm_url)
+            if logo_cvm:
+                canvas.drawImage(logo_cvm, page_width - 1.8*inch, page_height - 1.6*inch, 
+                               width=1.3*inch, height=1.3*inch, 
+                               mask='auto', preserveAspectRatio=True, anchor='e')
+            
+            # 4. Draw Center Text
+            # Institute Name
+            canvas.setFont('Helvetica-Bold', 14)
+            canvas.setFillColor(colors.HexColor('#1f2937'))
+            
+            # Center coordinates
+            center_x = page_width / 2.0
+            text_y = page_height - 0.8*inch
+            
+            canvas.drawCentredString(center_x, text_y, "Madhuben & Bhanubhai Patel")
+            canvas.drawCentredString(center_x, text_y - 18, "Institute of Technology")
+            
+            # Subtitle
+            canvas.setFont('Helvetica', 10)
+            canvas.setFillColor(colors.HexColor('#6b7280'))
+            canvas.drawCentredString(center_x, text_y - 35, "(The Charutar Vidya Mandal (CVM) University)")
+
+            # 5. Separator Line
+            canvas.setStrokeColor(colors.HexColor('#e5e7eb'))
+            canvas.setLineWidth(1)
+            canvas.line(0.5*inch, page_height - 1.8*inch, page_width - 0.5*inch, page_height - 1.8*inch)
+            
+            canvas.restoreState()
+
+        # --- SETUP DOCUMENT ---
         doc = SimpleDocTemplate(
             pdf_buffer,
             pagesize=A4,
             rightMargin=0.5*inch,
             leftMargin=0.5*inch,
-            topMargin=0.75*inch,
+            topMargin=2.2*inch, # Space for Header
             bottomMargin=0.75*inch,
             title='Leave Management Report'
         )
@@ -711,36 +788,13 @@ def generate_leave_report():
         story = []
         styles = getSampleStyleSheet()
         
-        # Custom styles
-        title_style = ParagraphStyle(
-            'CustomTitle',
-            parent=styles['Heading1'],
-            fontSize=24,
-            textColor=colors.HexColor('#134252'),
-            spaceAfter=6,
-            alignment=1  # Center
-        )
+        heading_style = ParagraphStyle('CustomHeading', parent=styles['Heading2'], fontSize=14, textColor=colors.HexColor('#208099'), spaceAfter=12, spaceBefore=12)
+        normal_style = ParagraphStyle('CustomNormal', parent=styles['Normal'], fontSize=10, spaceAfter=6)
         
-        heading_style = ParagraphStyle(
-            'CustomHeading',
-            parent=styles['Heading2'],
-            fontSize=14,
-            textColor=colors.HexColor('#208099'),
-            spaceAfter=12,
-            spaceBefore=12
-        )
-        
-        normal_style = ParagraphStyle(
-            'CustomNormal',
-            parent=styles['Normal'],
-            fontSize=10,
-            spaceAfter=6
-        )
-        
-        # Title
-        story.append(Paragraph('Leave Management Report', title_style))
+        # Report Title
+        story.append(Paragraph('Leave Management Report', heading_style))
         story.append(Paragraph(f'Generated on {datetime.now().strftime("%d %B %Y at %H:%M:%S")}', normal_style))
-        story.append(Spacer(1, 0.3*inch))
+        story.append(Spacer(1, 0.2*inch))
         
         # Summary Statistics
         story.append(Paragraph('Summary Statistics', heading_style))
@@ -759,11 +813,9 @@ def generate_leave_report():
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 11),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
             ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
             ('GRID', (0, 0), (-1, -1), 1, colors.black),
-            ('FONTSIZE', (0, 1), (-1, -1), 10),
             ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f0f0f0')])
         ]))
         
@@ -774,13 +826,18 @@ def generate_leave_report():
         story.append(Paragraph('Detailed Leave Records', heading_style))
         
         if leaves:
-            # Create detailed table
             leave_data = [['Employee', 'Leave Type', 'Start Date', 'End Date', 'Days', 'Status', 'Reason']]
             
             for leave in leaves:
-                emp_name = leave.requester.email.split('@')[0] if leave.requester else 'N/A'
+                if leave.requester:
+                    name = getattr(leave.requester, 'full_name', None) or leave.requester.email.split('@')[0]
+                    email = leave.requester.email
+                    emp_details = Paragraph(f"<b>{name}</b><br/>{email}", normal_style)
+                else:
+                    emp_details = 'N/A'
+
                 leave_data.append([
-                    emp_name,
+                    emp_details,
                     leave.leave_type,
                     leave.start_date.strftime('%d/%m/%Y'),
                     leave.end_date.strftime('%d/%m/%Y'),
@@ -789,7 +846,7 @@ def generate_leave_report():
                     leave.reason[:30] + '...' if leave.reason and len(leave.reason) > 30 else leave.reason or 'N/A'
                 ])
             
-            leave_table = Table(leave_data, colWidths=[1.2*inch, 1*inch, 1*inch, 1*inch, 0.7*inch, 0.9*inch, 1.4*inch])
+            leave_table = Table(leave_data, colWidths=[2.0*inch, 1*inch, 1*inch, 1*inch, 0.7*inch, 0.9*inch, 1.4*inch])
             leave_table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#208099')),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -797,54 +854,13 @@ def generate_leave_report():
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
                 ('FONTSIZE', (0, 0), (-1, 0), 10),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
                 ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-                ('FONTSIZE', (0, 1), (-1, -1), 8),
-                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9f9f9')]),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('LEFTPADDING', (0, 0), (-1, -1), 4),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9f9f9')])
             ]))
-            
             story.append(leave_table)
         else:
             story.append(Paragraph('No leave records found.', normal_style))
-        
-        story.append(Spacer(1, 0.3*inch))
-        
-        # Leave Balance Information
-        current_year = datetime.now().year
-        balances = LeaveBalance.query.filter_by(year=current_year).all()
-        
-        if balances:
-            story.append(PageBreak())
-            story.append(Paragraph('Leave Balance Summary (Current Year)', heading_style))
-            
-            balance_data = [['Leave Type', 'Total Days', 'Used Days', 'Remaining Days']]
-            
-            for balance in balances[:10]:  # Limit to 10 entries
-                balance_data.append([
-                    balance.leave_type,
-                    str(balance.total_days),
-                    str(balance.used_days),
-                    str(balance.remaining_days)
-                ])
-            
-            balance_table = Table(balance_data, colWidths=[2*inch, 1.5*inch, 1.5*inch, 1.5*inch])
-            balance_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#208099')),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 11),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-                ('GRID', (0, 0), (-1, -1), 1, colors.black),
-                ('FONTSIZE', (0, 1), (-1, -1), 10),
-                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f0f0f0')])
-            ]))
-            
-            story.append(balance_table)
         
         story.append(Spacer(1, 0.5*inch))
         
@@ -853,19 +869,15 @@ def generate_leave_report():
         <b>Report Information:</b><br/>
         Generated by: {user.email}<br/>
         Role: {user.role}<br/>
-        System: WorkZen Leave Management<br/>
         <br/>
-        <i>This is an auto-generated report. Please verify the data before taking any action.</i>
+
         """
         story.append(Paragraph(footer_text, normal_style))
         
-        # Build PDF
-        doc.build(story)
+        # BUILD PDF
+        doc.build(story, onFirstPage=draw_header, onLaterPages=draw_header)
         
-        # Get PDF bytes
         pdf_buffer.seek(0)
-        
-        # Send PDF response
         return send_file(
             pdf_buffer,
             mimetype='application/pdf',
@@ -875,103 +887,234 @@ def generate_leave_report():
     
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': f'Failed to generate report: {str(e)}'}), 500
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Failed to generate report: {str(e)}'}), 500   
+
 
 
 @app.route('/api/leaves/report/filtered', methods=['POST'])
 @login_required
 def generate_filtered_report():
-    """Generate PDF report with filters (date range, status, leave type)"""
+    """Generate filtered PDF report with Institutional Header"""
     try:
+        user_id = session.get('user_id')
+        user = User.query.get(user_id)
+        
+        # Get filter criteria
         data = request.get_json()
         start_date = data.get('start_date')
         end_date = data.get('end_date')
-        status_filter = data.get('status')
-        leave_type_filter = data.get('leave_type')
+        status = data.get('status')
+        leave_type = data.get('leave_type')
         
         # Build query
         query = Leave.query
         
         if start_date:
-            start = datetime.strptime(start_date, '%Y-%m-%d').date()
-            query = query.filter(Leave.start_date >= start)
-        
+            query = query.filter(Leave.start_date >= datetime.strptime(start_date, '%Y-%m-%d').date())
         if end_date:
-            end = datetime.strptime(end_date, '%Y-%m-%d').date()
-            query = query.filter(Leave.end_date <= end)
+            query = query.filter(Leave.end_date <= datetime.strptime(end_date, '%Y-%m-%d').date())
+        if status:
+            query = query.filter(Leave.status == status)
+        if leave_type:
+            query = query.filter(Leave.leave_type == leave_type)
+            
+        leaves = query.order_by(Leave.created_at.desc()).all()
         
-        if status_filter:
-            query = query.filter_by(status=status_filter)
+        # Statistics for this filtered set
+        total_leaves = len(leaves)
+        pending_leaves = len([l for l in leaves if l.status == 'Pending'])
+        approved_leaves = len([l for l in leaves if l.status == 'Approved'])
+        rejected_leaves = len([l for l in leaves if l.status == 'Rejected'])
         
-        if leave_type_filter:
-            query = query.filter_by(leave_type=leave_type_filter)
-        
-        leaves = query.all()
-        
-        # Generate PDF
         pdf_buffer = BytesIO()
-        doc = SimpleDocTemplate(pdf_buffer, pagesize=A4)
+
+        # --- HELPER: Fetch Image safely ---
+        def get_image_from_url(url):
+            try:
+                ctx = ssl.create_default_context()
+                ctx.check_hostname = False
+                ctx.verify_mode = ssl.CERT_NONE
+                req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+                response = urlopen(req, context=ctx)
+                image_data = BytesIO(response.read())
+                return ImageReader(image_data)
+            except Exception:
+                return None
+
+        # --- HEADER FUNCTION (Same as Main Report) ---
+        def draw_header(canvas, doc):
+            canvas.saveState()
+            page_width, page_height = A4
+            
+            # URLs
+            mbit_url = "https://www.mbit.edu.in/wp-content/uploads/2021/12/webMBIT-1@2x.png"
+            cvm_url = "https://www.mbit.edu.in/wp-content/uploads/2020/02/CVM-CVMU.jpg"
+            
+            # Left Logo (MBIT)
+            logo_mbit = get_image_from_url(mbit_url)
+            if logo_mbit:
+                canvas.drawImage(logo_mbit, 0.4*inch, page_height - 1.6*inch, 
+                               width=2.5*inch, height=0.9*inch, 
+                               mask='auto', preserveAspectRatio=True, anchor='w')
+            else:
+                canvas.setFont('Helvetica-Oblique', 10)
+                canvas.drawString(0.5*inch, page_height - 1*inch, "MBIT")
+
+            # Right Logo (CVM)
+            logo_cvm = get_image_from_url(cvm_url)
+            if logo_cvm:
+                canvas.drawImage(logo_cvm, page_width - 1.8*inch, page_height - 1.6*inch, 
+                               width=1.3*inch, height=1.3*inch, 
+                               mask='auto', preserveAspectRatio=True, anchor='e')
+
+            # Center Text
+            canvas.setFont('Helvetica-Bold', 14)
+            canvas.setFillColor(colors.HexColor('#1f2937'))
+            center_x = page_width / 2.0
+            text_y = page_height - 0.8*inch
+            
+            canvas.drawCentredString(center_x, text_y, "Madhuben & Bhanubhai Patel")
+            canvas.drawCentredString(center_x, text_y - 18, "Institute of Technology")
+            
+            canvas.setFont('Helvetica', 10)
+            canvas.setFillColor(colors.HexColor('#6b7280'))
+            canvas.drawCentredString(center_x, text_y - 35, "(The Charutar Vidya Mandal (CVM) University)")
+
+            # Separator Line
+            canvas.setStrokeColor(colors.HexColor('#e5e7eb'))
+            canvas.setLineWidth(1)
+            canvas.line(0.5*inch, page_height - 1.8*inch, page_width - 0.5*inch, page_height - 1.8*inch)
+            
+            canvas.restoreState()
+
+        # --- SETUP DOCUMENT ---
+        doc = SimpleDocTemplate(
+            pdf_buffer,
+            pagesize=A4,
+            rightMargin=0.5*inch,
+            leftMargin=0.5*inch,
+            topMargin=2.2*inch,  # Consistent Header Space
+            bottomMargin=0.75*inch,
+            title='Filtered Leave Report'
+        )
         
         story = []
         styles = getSampleStyleSheet()
         
-        # Title and filters applied
-        story.append(Paragraph('Leave Report (Filtered)', styles['Heading1']))
+        heading_style = ParagraphStyle('CustomHeading', parent=styles['Heading2'], fontSize=14, textColor=colors.HexColor('#208099'), spaceAfter=12, spaceBefore=12)
+        normal_style = ParagraphStyle('CustomNormal', parent=styles['Normal'], fontSize=10, spaceAfter=6)
         
-        filter_info = f"Filters Applied: "
-        if start_date:
-            filter_info += f"From {start_date} "
-        if end_date:
-            filter_info += f"To {end_date} "
-        if status_filter:
-            filter_info += f"Status: {status_filter} "
-        if leave_type_filter:
-            filter_info += f"Type: {leave_type_filter}"
+        # Report Title
+        story.append(Paragraph('Filtered Leave Report', heading_style))
+        story.append(Paragraph(f'Generated on {datetime.now().strftime("%d %B %Y at %H:%M:%S")}', normal_style))
         
-        story.append(Paragraph(filter_info, styles['Normal']))
+        # Show Filters Applied
+        filter_text = []
+        if start_date: filter_text.append(f"From: {start_date}")
+        if end_date: filter_text.append(f"To: {end_date}")
+        if status: filter_text.append(f"Status: {status}")
+        if leave_type: filter_text.append(f"Type: {leave_type}")
+        
+        if filter_text:
+            story.append(Paragraph(f"<b>Filters:</b> {', '.join(filter_text)}", normal_style))
+            
         story.append(Spacer(1, 0.2*inch))
         
-        # Table
+        # Summary Statistics Table
+        story.append(Paragraph('Summary Statistics', heading_style))
+        summary_data = [
+            ['Metric', 'Count'],
+            ['Total Requests', str(total_leaves)],
+            ['Pending', str(pending_leaves)],
+            ['Approved', str(approved_leaves)],
+            ['Rejected', str(rejected_leaves)],
+        ]
+        
+        summary_table = Table(summary_data, colWidths=[3*inch, 2*inch])
+        summary_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#208099')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f0f0f0')])
+        ]))
+        
+        story.append(summary_table)
+        story.append(Spacer(1, 0.3*inch))
+        
+        # Detailed Records Table
+        story.append(Paragraph('Detailed Leave Records', heading_style))
+        
         if leaves:
-            table_data = [['Employee', 'Type', 'Start', 'End', 'Days', 'Status', 'Reason']]
+            leave_data = [['Employee', 'Leave Type', 'Start Date', 'End Date', 'Days', 'Status', 'Reason']]
+            
             for leave in leaves:
-                emp_name = leave.requester.email.split('@')[0] if leave.requester else 'N/A'
-                table_data.append([
-                    emp_name,
+                if leave.requester:
+                    name = getattr(leave.requester, 'full_name', None) or leave.requester.email.split('@')[0]
+                    email = leave.requester.email
+                    emp_details = Paragraph(f"<b>{name}</b><br/>{email}", normal_style)
+                else:
+                    emp_details = 'N/A'
+
+                leave_data.append([
+                    emp_details,
                     leave.leave_type,
                     leave.start_date.strftime('%d/%m/%Y'),
                     leave.end_date.strftime('%d/%m/%Y'),
                     str(leave.number_of_days),
                     leave.status,
-                    leave.reason[:20] + '...' if leave.reason and len(leave.reason) > 20 else leave.reason or 'N/A'
+                    leave.reason[:30] + '...' if leave.reason and len(leave.reason) > 30 else leave.reason or 'N/A'
                 ])
             
-            table = Table(table_data)
-            table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            leave_table = Table(leave_data, colWidths=[2.0*inch, 1*inch, 1*inch, 1*inch, 0.7*inch, 0.9*inch, 1.4*inch])
+            leave_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#208099')),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 1), (-1, -1), 9),
-                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('FONTSIZE', (0, 0), (-1, 0), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9f9f9')])
             ]))
-            story.append(table)
+            story.append(leave_table)
         else:
-            story.append(Paragraph('No matching leave records found.', styles['Normal']))
+            story.append(Paragraph('No records match these filters.', normal_style))
         
-        doc.build(story)
+        story.append(Spacer(1, 0.5*inch))
+        
+        # Footer
+        footer_text = f"""
+        <b>Report Information:</b><br/>
+        Generated by: {user.email}<br/>
+        Role: {user.role}<br/>
+        <br/>
+        <i>This is an auto-generated report. Please verify the data before taking any action.</i>
+        """
+        story.append(Paragraph(footer_text, normal_style))
+        
+        # BUILD PDF
+        doc.build(story, onFirstPage=draw_header, onLaterPages=draw_header)
+        
         pdf_buffer.seek(0)
-        
         return send_file(
             pdf_buffer,
             mimetype='application/pdf',
             as_attachment=True,
-            download_name=f'leave_filtered_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
+            download_name=f'filtered_leave_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
         )
     
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
+        db.session.rollback()
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Failed to generate report: {str(e)}'}), 500
 
 # ======================== SICK LEAVE PDF UPLOAD ========================
 
@@ -1137,170 +1280,167 @@ def report_detail(report_type):
         return redirect(url_for('reports'))
 
 
-# ======================== PROFILE ========================
-
-# ======================== UPDATED PROFILE ROUTE ========================
 # ======================== PROFILE ROUTE ========================
-
 @app.route('/profile')
 @app.route('/profile/<int:user_id>')
 @login_required
-def profile(user_id=None):
-    # 1. Get logged-in user
-    current_user_id = session.get('user_id')
-    current_user = User.query.get(current_user_id)
+def profile(user_id=None):  # <--- KEY FIX: Set default value to None
+    # 1. Get the Logged-in User (This ensures the Sidebar works correctly)
+    logged_in_id = session.get('user_id')
+    logged_in_user = User.query.get(logged_in_id)
 
-    # 2. Determine target user
+    # 2. Determine which user's profile to show
     if user_id is None:
-        target_user = current_user
+        # Case A: User visited '/profile' -> Show their own profile
+        profile_user = logged_in_user
     else:
-        target_user = User.query.get_or_404(user_id)
-    
-    # 3. Permission Check (Case Insensitive)
-    user_role = current_user.role.upper()
-    is_authorized = (
-        user_role == 'HOD' or 
-        (user_role == 'COUNSELOR' and target_user.counselor_id == current_user.id) or
-        current_user.id == target_user.id
-    )
-    
-    if not is_authorized:
-        return "Access Denied", 403
+        # Case B: User visited '/profile/123' -> Show that specific student
+        profile_user = User.query.get_or_404(user_id)
 
-    view_only = (current_user.id != target_user.id)
-    
-    # 4. PASS 'user' as current_user (for sidebar) and 'profile_user' for content
-    # Note: You will need to update profile.html to use 'profile_user' for the form fields
-    # For now, we pass target_user as 'user' to keep profile.html working, 
-    # but be aware this swaps the sidebar avatar temporarily.
-    return render_template('profile.html', user=target_user, view_only=view_only)
+    # 3. Check if we are viewing someone else's profile
+    # If IDs match, it's my profile (Editable). If not, it's view-only.
+    view_only = (logged_in_user.id != profile_user.id)
 
-@app.route('/api/settings/change-password', methods=['POST'])
+    # 4. Pass variables to template
+    # 'user'    -> Sent to base.html (Keeps the Sidebar/Menu correct)
+    # 'student' -> Sent to profile.html (Shows the profile data)
+    return render_template('profile.html', 
+                           user=logged_in_user, 
+                           student=profile_user, 
+                           view_only=view_only)
+
+# ======================== PROFILE API ROUTES ========================
+
+# 1. CHANGE PASSWORD (Fixed URL to match profile.html)
+@app.route('/api/change_password', methods=['POST'])
 @login_required
 def change_password():
-    """Change password"""
-    user = User.query.get(session.get('user_id'))
-    data = request.get_json()
-    old_password = data.get('old_password')
-    new_password = data.get('new_password')
+    """Handle Password Change"""
+    try:
+        data = request.get_json()
+        user_id = session.get('user_id')
+        user = User.query.get(user_id)
+        
+        # Check keys sent from HTML: 'old_password' and 'new_password'
+        if not user.check_password(data.get('old_password')):
+            return jsonify({'error': 'Incorrect current password'}), 400
+            
+        user.set_password(data.get('new_password'))
+        db.session.commit()
+        
+        return jsonify({'message': 'Password updated successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-    if not user.check_password(old_password):
-        return jsonify({'error': 'Old password is incorrect'}), 401
 
-    user.set_password(new_password)
-    db.session.commit()
-    return jsonify({'message': 'Password changed successfully'}), 200
-
-@app.route('/api/settings/update-profile', methods=['PUT'])
+# 2. GET ACHIEVEMENTS (This was missing! That's why they didn't show up)
+@app.route('/api/achievements', methods=['GET'])
 @login_required
-def update_profile():
-    """Update profile"""
-    user = User.query.get(session.get('user_id'))
-    data = request.get_json()
+def get_achievements():
+    """Fetch achievements list"""
+    try:
+        # Get ID from URL parameter (e.g. ?user_id=5) or default to logged-in user
+        user_id = request.args.get('user_id', type=int, default=session.get('user_id'))
+        
+        achievements = Achievement.query.filter_by(user_id=user_id).order_by(Achievement.created_at.desc()).all()
+        
+        return jsonify({
+            'achievements': [{
+                'id': ach.id,
+                'title': ach.title,
+                'description': ach.description,
+                'file_url': ach.file_url,
+                'created_at': ach.created_at.isoformat() if ach.created_at else ''
+            } for ach in achievements]
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-    # Add additional profile fields as needed
 
-    db.session.commit()
-    return jsonify({'message': 'Profile updated successfully'}), 200
-
+# 3. UPLOAD ACHIEVEMENT
 @app.route('/api/achievements/upload', methods=['POST'])
 @login_required
 def upload_achievement():
+    """Upload a new achievement with PDF"""
     try:
-        user_id = session.get('user_id')
+        # Allow uploading for other users (if HOD/Counselor) or self
+        current_user_id = session.get('user_id')
+        target_user_id = request.args.get('user_id', type=int, default=current_user_id)
+        
         title = request.form.get('title')
         description = request.form.get('description')
         file = request.files.get('file')
 
-        if not title or not description or not file:
-            return jsonify({'error': 'Missing fields'}), 400
+        if not file or not title:
+            return jsonify({'error': 'Missing file or title'}), 400
 
         if not file.filename.lower().endswith('.pdf'):
             return jsonify({'error': 'Only PDF files allowed'}), 400
-
-        # size check: max 5 MB
-        file.seek(0, 2)
-        file_size = file.tell()
-        file.seek(0)
-
-        max_size = 5 * 1024 * 1024
-        if file_size > max_size:
-            return jsonify({'error': 'File cannot exceed 5 MB'}), 400
-
+            
+        # Save File
         import secrets
         os.makedirs('uploads/achievements', exist_ok=True)
+        safe_name = f"ach_{target_user_id}_{secrets.token_hex(8)}.pdf"
+        file_path = os.path.join('uploads/achievements', safe_name)
+        file.save(file_path)
 
-        safe_name = f"{user_id}_{secrets.token_hex(8)}.pdf"
-        path = os.path.join('uploads/achievements', safe_name)
-
-        file.save(path)
-
+        # Save to DB
         achievement = Achievement(
-            user_id=user_id,
+            user_id=target_user_id,
             title=title,
             description=description,
-            file_url=f'/uploads/achievements/{safe_name}',
-            file_size=file_size,
+            file_url=f"/uploads/achievements/{safe_name}",
+            file_size=os.path.getsize(file_path)
         )
-
         db.session.add(achievement)
         db.session.commit()
 
-        return jsonify({'message': 'Achievement uploaded successfully'}), 201
+        return jsonify({'message': 'Achievement added successfully'}), 201
 
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
 
-
-@app.route('/api/achievements/<int:achievement_id>', methods=['DELETE'])
+# 4. DELETE ACHIEVEMENT
+@app.route('/api/achievements/<int:id>', methods=['DELETE'])
 @login_required
-def delete_achievement(achievement_id):
-    user_id = session.get('user_id')
-    ach = Achievement.query.filter_by(id=achievement_id, user_id=user_id).first()
+def delete_achievement(id):
+    """Delete an achievement"""
+    try:
+        ach = Achievement.query.get(id)
+        if not ach:
+            return jsonify({'error': 'Not found'}), 404
+            
+        # Security: Allow if it's your own achievement OR you are HOD
+        current_user = User.query.get(session.get('user_id'))
+        if ach.user_id != current_user.id and current_user.role != 'HOD':
+            return jsonify({'error': 'Unauthorized'}), 403
 
-    if not ach:
-        return jsonify({'error': 'Achievement not found'}), 404
+        # Delete file
+        try:
+            # Remove leading slash for file system path
+            file_path = ach.file_url.lstrip('/')
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        except:
+            pass 
 
-    # optionally delete file from disk here
+        db.session.delete(ach)
+        db.session.commit()
+        return jsonify({'message': 'Deleted successfully'}), 200
 
-    db.session.delete(ach)
-    db.session.commit()
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-    return jsonify({'message': 'Achievement deleted'}), 200
 
+# 5. SERVE PDF FILES
 @app.route('/uploads/achievements/<filename>')
 @login_required
-def view_achievement(filename):
-    # as_attachment=False allows the PDF to open in the browser
-    return send_file(os.path.join('uploads/achievements', filename), as_attachment=False)
+def uploaded_achievement_file(filename):
+    # This allows the "View PDF" button to work
+    return send_file(os.path.join('uploads/achievements', filename))
 
-# Add this to app.py
-@app.route('/api/profile/password', methods=['PUT'])
-@login_required
-def update_password():
-    user_id = session.get('user_id')
-    user = User.query.get(user_id)
-    data = request.get_json()
-
-    # Verify old password
-    if not user.check_password(data.get('current_password')):
-        return jsonify({'error': 'Incorrect current password'}), 400
-
-    # Verify new passwords match
-    if data.get('new_password') != data.get('confirm_password'):
-        return jsonify({'error': 'New passwords do not match'}), 400
-
-    # Set new password
-    user.set_password(data.get('new_password'))
-    db.session.commit()
-
-    return jsonify({'message': 'Password updated successfully'})
-
-# ... (Keep existing imports and config)
-
-# ======================== STUDENTS LIST ROUTE ========================
 
 # ======================== STUDENTS LIST ROUTE ========================
 
@@ -1380,7 +1520,121 @@ def get_achievements_list():
         } for a in achievements]
     })
 
-# ... (Rest of app.py remains same)
+# ======================== UPDATED REPORT GENERATION ========================
+import requests
+from reportlab.lib.pagesizes import letter, landscape
+from reportlab.platypus import Image as ReportLabImage
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+from reportlab.lib import colors
+from io import BytesIO
+from datetime import datetime
+from flask import send_file, session, jsonify
+
+# ======================== UPDATED PDF REPORT ROUTE ========================
+@app.route('/api/reports/download/<report_type>/pdf')
+@login_required
+def download_report_pdf(report_type):
+    """Generate PDF Report with Header like Base.html and Detailed Columns"""
+    try:
+        user_id = session.get('user_id')
+        user = User.query.get(user_id)
+        
+        # 1. Fetch Data
+        if report_type == 'leaves':
+            if user.role == 'HOD':
+                data = Leave.query.join(User).order_by(Leave.created_at.desc()).all()
+            elif user.role == 'COUNSELOR':
+                data = Leave.query.join(User).filter(User.counselor_id == user.id).order_by(Leave.created_at.desc()).all()
+            else:
+                data = Leave.query.filter_by(user_id=user.id).order_by(Leave.created_at.desc()).all()
+                
+            # --- COLUMNS: Added Name & Email ---
+            table_headers = ['Student Name', 'Email', 'Type', 'Start Date', 'End Date', 'Days', 'Status']
+            
+            table_data = []
+            for leave in data:
+                table_data.append([
+                    leave.requester.full_name or "N/A",  # Name from relationship
+                    leave.requester.email or "N/A",      # Email from relationship
+                    leave.leave_type,
+                    leave.start_date.strftime('%Y-%m-%d'),
+                    leave.end_date.strftime('%Y-%m-%d'),
+                    str(leave.number_of_days),
+                    leave.status
+                ])
+        else:
+            return jsonify({'error': 'Invalid report type'}), 400
+
+        # 2. Setup PDF (Landscape)
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=landscape(letter), topMargin=1.5*inch)
+        elements = []
+
+        # 3. Header Function (Draws Logos & Text)
+        def draw_header(canvas, doc):
+            canvas.saveState()
+            width, height = doc.pagesize
+            logo_width = 1.2 * inch
+            logo_height = 1.0 * inch
+            margin = 30
+            
+            # Left Logo (MBIT)
+            try:
+                mbit_url = "https://www.mbit.edu.in/wp-content/uploads/2021/12/webMBIT-1@2x.png"
+                img_data = requests.get(mbit_url).content
+                img = ReportLabImage(BytesIO(img_data), width=logo_width, height=logo_height)
+                img.drawOn(canvas, margin, height - logo_height - margin)
+            except: pass
+
+            # Center Text
+            text_y = height - margin - 30
+            canvas.setFont("Helvetica-Bold", 16)
+            canvas.drawCentredString(width / 2, text_y, "Madhuben & Bhanubhai Patel Institute of Technology")
+            canvas.setFont("Helvetica", 12)
+            canvas.drawCentredString(width / 2, text_y - 20, "(The Charutar Vidya Mandal (CVM) University)")
+            canvas.setFont("Helvetica-Bold", 14)
+            canvas.drawCentredString(width / 2, text_y - 45, f"{report_type.upper()} REPORT")
+
+            # Right Logo (CVM)
+            try:
+                cvm_url = "https://www.mbit.edu.in/wp-content/uploads/2020/02/CVM-CVMU.jpg"
+                img_data = requests.get(cvm_url).content
+                img = ReportLabImage(BytesIO(img_data), width=logo_width, height=logo_height)
+                img.drawOn(canvas, width - logo_width - margin, height - logo_height - margin)
+            except: pass
+
+            # Line
+            canvas.setStrokeColor(colors.black)
+            canvas.line(margin, height - logo_height - margin - 10, width - margin, height - logo_height - margin - 10)
+            canvas.restoreState()
+
+        # 4. Build Table
+        final_data = [table_headers] + table_data
+        # Adjusted column widths for landscape
+        col_widths = [2*inch, 2.5*inch, 1.2*inch, 1.2*inch, 1.2*inch, 0.8*inch, 1*inch]
+        
+        table = Table(final_data, colWidths=col_widths)
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6366f1')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('ALIGN', (0, 1), (1, -1), 'LEFT'), # Left align Name/Email
+        ]))
+        
+        elements.append(table)
+        doc.build(elements, onFirstPage=draw_header, onLaterPages=draw_header)
+        
+        buffer.seek(0)
+        return send_file(buffer, as_attachment=True, download_name=f"{report_type}_report.pdf", mimetype='application/pdf')
+
+    except Exception as e:
+        print(f"PDF Error: {e}")
+        return jsonify({'error': str(e)}), 500
+
 # ======================== ERROR HANDLERS ========================
 
 @app.errorhandler(404)
