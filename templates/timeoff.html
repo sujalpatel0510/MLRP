@@ -91,6 +91,7 @@
         padding: 12px 15px;
         text-align: left;
         border-bottom: 1px solid #ddd;
+        vertical-align: middle;
     }
     .leaves-table tbody tr:hover {
         background-color: #f5f5f5;
@@ -240,38 +241,6 @@
         font-size: 13px;
     }
 
-    .medical-record-item {
-        padding: 8px;
-        margin: 4px 0;
-        background: white;
-        border-left: 3px solid #208099;
-        border-radius: 3px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 11px;
-    }
-
-    .medical-record-item a {
-        color: #208099;
-        text-decoration: none;
-        font-size: 10px;
-    }
-
-    .medical-record-item a:hover {
-        text-decoration: underline;
-    }
-
-    .delete-record {
-        cursor: pointer;
-        color: #e74c3c;
-        font-size: 10px;
-    }
-
-    .hidden-element {
-        display: none;
-    }
-
     .btn-view-pdf {
         display: inline-flex;
         align-items: center;
@@ -284,30 +253,12 @@
         text-decoration: none;
         font-size: 11px;
         font-weight: 600;
+        margin-top: 5px;
         transition: background-color 0.2s;
     }
     .btn-view-pdf:hover {
         background-color: #b3e5fc;
     }
-
-    .btn-view-pdf {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    background-color: #e3f2fd;
-    color: #0277bd;
-    padding: 4px 10px;
-    border: 1px solid #b3e5fc;
-    border-radius: 4px;
-    text-decoration: none;
-    font-size: 11px;
-    font-weight: 600;
-    margin-top: 5px;
-    transition: background-color 0.2s;
-}
-.btn-view-pdf:hover {
-    background-color: #b3e5fc;
-}
 
 </style>
 {% endblock %}
@@ -479,7 +430,7 @@
                         <th>Status</th>
                         <th>Reason</th>
                         <th>Doc</th>
-                        {% if user.role in ['HR_OFFICER', 'ADMIN'] %}
+                        {% if user.role in ['HR_OFFICER', 'ADMIN', 'HOD', 'COUNSELOR'] %}
                         <th>Actions</th>
                         {% endif %}
                     </tr>
@@ -488,8 +439,15 @@
                     {% for leave in all_leaves %}
                     <tr data-status="{{ leave.status }}" data-employee="{{ leave.requester.full_name|lower }}">
                         <td>
-                            <strong>{{ leave.requester.full_name }}</strong>
-                            <div class="employee-info">{{ leave.requester.login_id }} • {{ leave.requester.department or 'N/A' }}</div>
+                            <div style="font-weight: bold; color: #333;">
+                                {{ leave.requester.full_name or 'No Name Set' }}
+                            </div>
+                            <div style="font-size: 0.85em; color: #777;">
+                                {{ leave.requester.email }}
+                            </div>
+                            <div class="employee-info" style="font-size: 0.75em; color: #999;">
+                                {{ leave.requester.department or '' }}
+                            </div>
                         </td>
                         <td>{{ leave.leave_type }}</td>
                         <td>{{ leave.start_date.strftime('%d %b %Y') }}</td>
@@ -502,15 +460,15 @@
                         </td>
                         <td>{{ leave.reason or 'N/A' }}</td>
                         <td>
-    {% if leave.documents %}
-        <a href="{{ leave.documents[0].file_url }}" target="_blank" class="btn-view-pdf">
-            👁️ View PDF
-        </a>
-    {% else %}
-        <span style="color: #ccc;">-</span>
-    {% endif %}
-</td>
-                        {% if user.role in ['HR_OFFICER', 'ADMIN'] %}
+                            {% if leave.documents %}
+                                <a href="{{ leave.documents[0].file_url }}" target="_blank" class="btn-view-pdf">
+                                    👁️ View PDF
+                                </a>
+                            {% else %}
+                                <span style="color: #ccc;">-</span>
+                            {% endif %}
+                        </td>
+                        {% if user.role in ['HR_OFFICER', 'ADMIN', 'HOD', 'COUNSELOR'] %}
                         <td>
                             {% if leave.status == 'Pending' %}
                             <div class="action-buttons">
@@ -575,9 +533,14 @@
                     {% for leave in pending_leaves %}
                     <tr>
                         <td>
-                            <strong>{{ leave.requester.full_name }}</strong>
-                            <div class="employee-info">
-                                {{ leave.requester.login_id }} • {{ leave.requester.department or 'N/A' }}
+                            <div style="font-weight: bold; color: #333;">
+                                {{ leave.requester.full_name or 'No Name Set' }}
+                            </div>
+                            <div style="font-size: 0.85em; color: #777;">
+                                {{ leave.requester.email }}
+                            </div>
+                            <div class="employee-info" style="font-size: 0.75em; color: #999;">
+                                {{ leave.requester.department or '' }}
                             </div>
                         </td>
                         <td>{{ leave.leave_type }}</td>
@@ -588,14 +551,14 @@
                         <td>{{ leave.created_at.strftime('%d %b %Y') }}</td>
                         <td>{{ leave.reason or 'N/A' }}</td>
                         <td>
-    {% if leave.documents %}
-        <a href="{{ leave.documents[0].file_url }}" target="_blank" class="btn-view-pdf">
-            👁️ View PDF
-        </a>
-    {% else %}
-        <span style="color: #ccc;">-</span>
-    {% endif %}
-</td>
+                            {% if leave.documents %}
+                                <a href="{{ leave.documents[0].file_url }}" target="_blank" class="btn-view-pdf">
+                                    👁️ View PDF
+                                </a>
+                            {% else %}
+                                <span style="color: #ccc;">-</span>
+                            {% endif %}
+                        </td>
                         <td>
                             <div class="action-buttons">
                                 <button class="btn-action btn-approve" onclick="handleLeaveAction({{ leave.id }}, 'approve')">

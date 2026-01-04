@@ -24,12 +24,17 @@
         </div>
     </div>
 
-    <div class="profile-content">
-        <div class="profile-section">
-            <h3>Contact Info</h3>
+    <div class="profile-section">
+            <h3>Profile Info</h3>
+            
             <div class="email-container">
+                <div class="info-row" style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    <label style="font-weight: bold; width: 120px; display: inline-block;">Full Name:</label>
+                    <span style="color: #333; font-size: 1.1em;">{{ user.full_name or 'Not Assigned' }}</span>
+                </div>
+
                 <div class="info-row">
-                    <label>Email Address:</label>
+                    <label style="font-weight: bold; width: 120px; display: inline-block;">Email Address:</label>
                     <span>{{ user.email }}</span>
                 </div>
             </div>

@@ -2,8 +2,16 @@
 
 {% block content %}
 <div class="container" style="padding: 20px;">
-    <h2>Student List</h2>
-    <div class="card-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+        <h2>Student List</h2>
+        <input type="text" 
+               id="searchInput" 
+               onkeyup="filterStudents()" 
+               placeholder="Search by Name or Enrollment..." 
+               style="padding: 10px; width: 100%; max-width: 300px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
+    </div>
+
+    <div id="studentGrid" class="card-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
         {% for student in students %}
         <div class="student-card" style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #e0e0e0; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
             <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
@@ -11,8 +19,8 @@
                     {{ student.full_name[0] if student.full_name else 'S' }}
                 </div>
                 <div>
-                    <h4 style="margin: 0; color: #333;">{{ student.full_name }}</h4>
-                    <p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">{{ student.email }}</p>
+                    <h4 class="student-name" style="margin: 0; color: #333;">{{ student.full_name }}</h4>
+                    <p class="student-email" style="margin: 5px 0 0 0; color: #666; font-size: 14px;">{{ student.email }}</p>
                 </div>
             </div>
             
@@ -23,6 +31,46 @@
         {% else %}
         <p>No students found assigned to you.</p>
         {% endfor %}
+        
+        <p id="noResultsMessage" style="display: none; width: 100%; text-align: center; color: #666; grid-column: 1 / -1;">
+            No matching students found.
+        </p>
     </div>
 </div>
+
+<script>
+    function filterStudents() {
+        // Get the search query
+        var input = document.getElementById('searchInput');
+        var filter = input.value.toLowerCase();
+        
+        // Get the grid and individual cards
+        var grid = document.getElementById('studentGrid');
+        var cards = grid.getElementsByClassName('student-card');
+        var hasVisibleCards = false;
+
+        // Loop through all cards
+        for (var i = 0; i < cards.length; i++) {
+            var card = cards[i];
+            
+            // Get Name and Email text from the specific classes we added
+            var nameEl = card.getElementsByClassName('student-name')[0];
+            var emailEl = card.getElementsByClassName('student-email')[0];
+            
+            var nameText = nameEl ? nameEl.textContent || nameEl.innerText : "";
+            var emailText = emailEl ? emailEl.textContent || emailEl.innerText : "";
+
+            // Check if query exists in Name OR Email (Enrollment)
+            if (nameText.toLowerCase().indexOf(filter) > -1 || emailText.toLowerCase().indexOf(filter) > -1) {
+                card.style.display = ""; // Show
+                hasVisibleCards = true;
+            } else {
+                card.style.display = "none"; // Hide
+            }
+        }
+
+        // Toggle 'No results' message
+        document.getElementById('noResultsMessage').style.display = hasVisibleCards ? "none" : "block";
+    }
+</script>
 {% endblock %}

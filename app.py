@@ -1,4 +1,5 @@
 # ======================== IMPORTS ========================
+from sqlalchemy import text
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
@@ -45,6 +46,7 @@ class User(db.Model):
     email = db.Column(db.String(255), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(50), default='STUDENT')
+    full_name = db.Column(db.String(255), nullable=True)
     
     # --- CHANGED: Use ID instead of Email ---
     counselor_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
@@ -56,9 +58,6 @@ class User(db.Model):
     def check_password(self, password):
         return self.password == password
 
-    @property
-    def full_name(self):
-        return self.email
 
 class Attendance(db.Model):
     """Attendance tracking model"""
@@ -630,6 +629,16 @@ def download_leave_document(filename):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/fix-database')
+def fix_database():
+    try:
+        # This SQL command adds the missing column
+        db.session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS full_name VARCHAR(255);"))
+        db.session.commit()
+        return "✅ Success! The 'full_name' column has been added to the database. You can go back to Dashboard now."
+    except Exception as e:
+        return f"❌ Error: {str(e)}"
+    
 
 @app.route('/api/leaves/approve/<int:leave_id>', methods=['PUT'])
 @login_required
